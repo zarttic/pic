@@ -10,7 +10,10 @@
       "Bash(cd:*)",
       "Bash(cd frontend:*)",
       "Bash(npm create:*)",
-      "Bash(cd src:*)"
+      "Bash(cd src:*)",
+      "Bash(git commit:*)",
+      "Bash(sleep 3:*)",
+      "Bash(sleep 5:*)"
     ]
   }
 }

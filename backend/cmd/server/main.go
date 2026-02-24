@@ -32,6 +32,7 @@ func main() {
 	api := r.Group("/api")
 	{
 		photoHandler := handlers.NewPhotoHandler()
+		albumHandler := handlers.NewAlbumHandler()
 
 		// 照片相关路由
 		photos := api.Group("/photos")
@@ -42,6 +43,18 @@ func main() {
 			photos.PUT("/:id", photoHandler.Update)
 			photos.DELETE("/:id", photoHandler.Delete)
 			photos.POST("/:id/view", photoHandler.IncrementView)
+		}
+
+		// 相册相关路由
+		albums := api.Group("/albums")
+		{
+			albums.GET("", albumHandler.GetAll)
+			albums.GET("/:id", albumHandler.GetByID)
+			albums.POST("", albumHandler.Create)
+			albums.PUT("/:id", albumHandler.Update)
+			albums.DELETE("/:id", albumHandler.Delete)
+			albums.POST("/:id/photos", albumHandler.AddPhotoToAlbum)
+			albums.DELETE("/:id/photos/:photo_id", albumHandler.RemovePhotoFromAlbum)
 		}
 
 		// 文件上传

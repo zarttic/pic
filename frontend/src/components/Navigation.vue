@@ -9,6 +9,9 @@
         <router-link to="/gallery" @click="closeMobileMenu">作品</router-link>
       </li>
       <li>
+        <router-link to="/albums" @click="closeMobileMenu">相册</router-link>
+      </li>
+      <li>
         <router-link to="/about" @click="closeMobileMenu">关于</router-link>
       </li>
       <li>

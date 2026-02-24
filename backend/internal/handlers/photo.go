@@ -108,18 +108,26 @@ func (h *PhotoHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// 生成缩略图
+	thumbnailPath, err := services.GenerateThumbnailFromUpload(uploadPath)
+	if err != nil {
+		fmt.Printf("Failed to generate thumbnail: %v\n", err)
+		// 不阻止上传，继续保存记录
+	}
+
 	// 创建照片记录
 	photo := models.Photo{
-		Title:        title,
-		Description:  description,
-		FilePath:     "/" + uploadPath,
-		Location:     location,
-		Year:         year,
-		CameraModel:  cameraModel,
-		Lens:         lens,
-		Aperture:     aperture,
-		ShutterSpeed: shutterSpeed,
-		ISO:          iso,
+		Title:         title,
+		Description:   description,
+		FilePath:      "/" + uploadPath,
+		ThumbnailPath: "/" + thumbnailPath,
+		Location:      location,
+		Year:          year,
+		CameraModel:   cameraModel,
+		Lens:          lens,
+		Aperture:      aperture,
+		ShutterSpeed:  shutterSpeed,
+		ISO:           iso,
 	}
 
 	if err := services.GetDB().Create(&photo).Error; err != nil {

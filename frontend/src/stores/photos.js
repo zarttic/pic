@@ -13,7 +13,7 @@ export const usePhotoStore = defineStore('photos', () => {
     error.value = null
     try {
       const response = await api.get('/photos')
-      photos.value = response.data
+      photos.value = response.data.data || response.data
     } catch (err) {
       error.value = err.message
       console.error('Error fetching photos:', err)

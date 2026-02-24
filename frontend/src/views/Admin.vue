@@ -104,10 +104,88 @@
             >
               删除
             </button>
+            <button
+              class="btn-edit"
+              @click="openEditDialog(photo)"
+            >
+              编辑
+            </button>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- 编辑对话框 -->
+    <div v-if="editDialogVisible" class="dialog-overlay" @click="closeEditDialog">
+      <div class="dialog-content" @click.stop>
+        <h3 class="dialog-title">编辑照片</h3>
+        <form @submit.prevent="handleEdit" class="edit-form">
+          <div class="form-group">
+            <label for="edit-title">标题</label>
+            <input
+              id="edit-title"
+              v-model="editForm.title"
+              type="text"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-location">拍摄地点</label>
+            <input
+              id="edit-location"
+              v-model="editForm.location"
+              type="text"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-year">年份</label>
+              <input
+                id="edit-year"
+                v-model="editForm.year"
+                type="number"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-camera">相机</label>
+              <input
+                id="edit-camera"
+                v-model="editForm.camera_model"
+                type="text"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">描述</label>
+            <textarea
+              id="edit-description"
+              v-model="editForm.description"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" v-model="editForm.is_featured" />
+              设为精选
+            </label>
+          </div>
+
+          <div class="dialog-actions">
+            <button type="button" class="btn-secondary" @click="closeEditDialog">
+              取消
+            </button>
+            <button type="submit" class="btn-primary">
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -117,6 +195,7 @@ import { usePhotoStore } from '../stores/photos'
 
 const photoStore = usePhotoStore()
 const uploading = ref(false)
+const editDialogVisible = ref(false)
 
 const uploadForm = ref({
   title: '',
@@ -128,6 +207,16 @@ const uploadForm = ref({
   aperture: '',
   shutter_speed: '',
   iso: null
+})
+
+const editForm = ref({
+  id: null,
+  title: '',
+  description: '',
+  location: '',
+  year: null,
+  camera_model: '',
+  is_featured: false
 })
 
 const selectedFile = ref(null)
@@ -188,6 +277,42 @@ const handleDelete = async (id) => {
     } catch (error) {
       alert('删除失败：' + error.message)
     }
+  }
+}
+
+const openEditDialog = (photo) => {
+  editForm.value = {
+    id: photo.id,
+    title: photo.title,
+    description: photo.description || '',
+    location: photo.location || '',
+    year: photo.year,
+    camera_model: photo.camera_model || '',
+    is_featured: photo.is_featured || false
+  }
+  editDialogVisible.value = true
+}
+
+const closeEditDialog = () => {
+  editDialogVisible.value = false
+  editForm.value = {
+    id: null,
+    title: '',
+    description: '',
+    location: '',
+    year: null,
+    camera_model: '',
+    is_featured: false
+  }
+}
+
+const handleEdit = async () => {
+  try {
+    await photoStore.updatePhoto(editForm.value.id, editForm.value)
+    alert('更新成功！')
+    closeEditDialog()
+  } catch (error) {
+    alert('更新失败：' + error.message)
   }
 }
 </script>
@@ -369,6 +494,85 @@ input[type="file"] {
 .btn-delete:hover {
   background: rgba(255, 0, 0, 0.8);
   border-color: rgba(255, 0, 0, 0.8);
+}
+
+.btn-edit {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: 60px;
+  background: rgba(10, 10, 10, 0.9);
+  color: var(--text-primary);
+  border: 1px solid var(--text-secondary);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.btn-edit:hover {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+/* 对话框样式 */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.dialog-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--text-secondary);
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 @media (max-width: 768px) {

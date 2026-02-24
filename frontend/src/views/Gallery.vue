@@ -21,7 +21,7 @@
           class="gallery-item"
           @click="openViewer(photo)"
         >
-          <img :src="photo.file_path" :alt="photo.title" />
+          <img :src="photo.thumbnail_path || photo.file_path" :alt="photo.title" />
           <div class="gallery-overlay">
             <h3 class="photo-title">{{ photo.title }}</h3>
             <p class="photo-meta">{{ photo.location }} · {{ photo.year }}</p>

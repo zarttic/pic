@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude:*)",
+      "WebSearch",
+      "Bash(node --version 2>/dev/null && npm --version 2>/dev/null && go version 2>/dev/null)",
+      "Bash(go version:*)",
+      "Bash(where go:*)",
+      "Bash(git init:*)",
+      "Bash(cd:*)",
+      "Bash(cd frontend:*)",
+      "Bash(npm create:*)",
+      "Bash(cd src:*)"
+    ]
+  }
+}

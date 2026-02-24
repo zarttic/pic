@@ -1,4 +1,4 @@
-module photography-website
+module picsite
 
 go 1.21
 

@@ -1,8 +1,8 @@
 package services
 
 import (
-	"photography-website/internal/config"
-	"photography-website/internal/models"
+	"picsite/internal/config"
+	"picsite/internal/models"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"photography-website/internal/models"
-	"photography-website/internal/services"
+	"picsite/internal/models"
+	"picsite/internal/services"
 	"strconv"
 	"time"
 

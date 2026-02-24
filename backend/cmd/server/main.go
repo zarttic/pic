@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"photography-website/internal/config"
-	"photography-website/internal/handlers"
-	"photography-website/internal/middleware"
-	"photography-website/internal/services"
+	"picsite/internal/config"
+	"picsite/internal/handlers"
+	"picsite/internal/middleware"
+	"picsite/internal/services"
 
 	"github.com/gin-gonic/gin"
 )

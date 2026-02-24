@@ -29,8 +29,33 @@ const routes = [
   },
   {
     path: '/admin',
-    name: 'Admin',
-    component: () => import('../views/Admin.vue')
+    component: () => import('../views/admin/AdminLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/admin/photos'
+      },
+      {
+        path: 'photos',
+        name: 'AdminPhotos',
+        component: () => import('../views/admin/PhotoManagement.vue')
+      },
+      {
+        path: 'albums',
+        name: 'AdminAlbums',
+        component: () => import('../views/admin/AlbumManagement.vue')
+      },
+      {
+        path: 'statistics',
+        name: 'AdminStatistics',
+        component: () => import('../views/admin/Statistics.vue')
+      },
+      {
+        path: 'settings',
+        name: 'AdminSettings',
+        component: () => import('../views/admin/Settings.vue')
+      }
+    ]
   }
 ]
 

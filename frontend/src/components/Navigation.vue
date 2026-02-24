@@ -15,7 +15,7 @@
         <router-link to="/about" @click="closeMobileMenu">关于</router-link>
       </li>
       <li>
-        <router-link to="/admin" @click="closeMobileMenu">管理</router-link>
+        <router-link to="/admin/photos" @click="closeMobileMenu">管理</router-link>
       </li>
     </ul>
   </nav>

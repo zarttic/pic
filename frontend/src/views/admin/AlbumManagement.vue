@@ -1,0 +1,493 @@
+<template>
+  <div class="album-management">
+    <div class="page-header">
+      <h2 class="page-title">相册管理</h2>
+      <button class="btn-primary" @click="showCreateDialog = true">
+        创建相册
+      </button>
+    </div>
+
+    <div v-if="albumStore.loading" class="loading">加载中...</div>
+
+    <div v-else-if="albumStore.albums.length === 0" class="empty">
+      暂无相册，点击上方按钮创建第一个相册
+    </div>
+
+    <div v-else class="albums-table">
+      <table>
+        <thead>
+          <tr>
+            <th>封面</th>
+            <th>名称</th>
+            <th>描述</th>
+            <th>照片数</th>
+            <th>加密</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="album in albumStore.albums" :key="album.id">
+            <td>
+              <div class="album-cover">
+                <img
+                  v-if="album.cover_photo_id"
+                  :src="getCoverPhoto(album)"
+                  :alt="album.name"
+                />
+                <div v-else class="cover-placeholder">
+                  {{ album.name.charAt(0) }}
+                </div>
+              </div>
+            </td>
+            <td>{{ album.name }}</td>
+            <td>{{ album.description || '-' }}</td>
+            <td>{{ album.photos?.length || 0 }}</td>
+            <td>
+              <span :class="['badge', album.is_protected ? 'badge-protected' : 'badge-public']">
+                {{ album.is_protected ? '🔒 已加密' : '公开' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-icon" @click="editAlbum(album)" title="编辑">
+                  ✏️
+                </button>
+                <button
+                  class="btn-icon"
+                  @click="togglePassword(album)"
+                  :title="album.is_protected ? '移除密码' : '设置密码'"
+                >
+                  {{ album.is_protected ? '🔓' : '🔒' }}
+                </button>
+                <button class="btn-icon btn-danger" @click="deleteAlbum(album.id)" title="删除">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 创建相册对话框 -->
+    <div v-if="showCreateDialog" class="dialog-overlay" @click="showCreateDialog = false">
+      <div class="dialog" @click.stop>
+        <h3 class="dialog-title">创建相册</h3>
+        <form @submit.prevent="handleCreate">
+          <div class="form-group">
+            <label>相册名称</label>
+            <input v-model="createForm.name" type="text" required placeholder="相册名称" />
+          </div>
+          <div class="form-group">
+            <label>描述</label>
+            <textarea v-model="createForm.description" rows="3" placeholder="相册描述"></textarea>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" v-model="createForm.is_protected" />
+              启用密码保护
+            </label>
+          </div>
+          <div v-if="createForm.is_protected" class="form-group">
+            <label>访问密码</label>
+            <input v-model="createForm.password" type="password" placeholder="输入访问密码" />
+          </div>
+          <div class="dialog-actions">
+            <button type="button" class="btn-secondary" @click="showCreateDialog = false">
+              取消
+            </button>
+            <button type="submit" class="btn-primary">创建</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 编辑相册对话框 -->
+    <div v-if="showEditDialog" class="dialog-overlay" @click="showEditDialog = false">
+      <div class="dialog" @click.stop>
+        <h3 class="dialog-title">编辑相册</h3>
+        <form @submit.prevent="handleEdit">
+          <div class="form-group">
+            <label>相册名称</label>
+            <input v-model="editForm.name" type="text" required />
+          </div>
+          <div class="form-group">
+            <label>描述</label>
+            <textarea v-model="editForm.description" rows="3"></textarea>
+          </div>
+          <div class="dialog-actions">
+            <button type="button" class="btn-secondary" @click="showEditDialog = false">
+              取消
+            </button>
+            <button type="submit" class="btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 设置密码对话框 -->
+    <div v-if="showPasswordDialog" class="dialog-overlay" @click="showPasswordDialog = false">
+      <div class="dialog" @click.stop>
+        <h3 class="dialog-title">{{ passwordForm.is_protected ? '移除密码' : '设置密码' }}</h3>
+        <form @submit.prevent="handleSetPassword">
+          <div v-if="!passwordForm.is_protected" class="form-group">
+            <label>访问密码</label>
+            <input v-model="passwordForm.password" type="password" required placeholder="输入访问密码" />
+          </div>
+          <p v-else>确定要移除相册的密码保护吗？</p>
+          <div class="dialog-actions">
+            <button type="button" class="btn-secondary" @click="showPasswordDialog = false">
+              取消
+            </button>
+            <button type="submit" class="btn-primary">
+              {{ passwordForm.is_protected ? '移除' : '设置' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useAlbumStore } from '../../stores/albums'
+
+const albumStore = useAlbumStore()
+const showCreateDialog = ref(false)
+const showEditDialog = ref(false)
+const showPasswordDialog = ref(false)
+
+const createForm = ref({
+  name: '',
+  description: '',
+  is_protected: false,
+  password: ''
+})
+
+const editForm = ref({
+  id: null,
+  name: '',
+  description: ''
+})
+
+const passwordForm = ref({
+  id: null,
+  is_protected: false,
+  password: ''
+})
+
+onMounted(() => {
+  albumStore.fetchAlbums()
+})
+
+const getCoverPhoto = (album) => {
+  const photo = album.photos?.find(p => p.id === album.cover_photo_id)
+  return photo?.thumbnail_path || photo?.file_path || ''
+}
+
+const handleCreate = async () => {
+  try {
+    await albumStore.createAlbum(createForm.value)
+    if (createForm.value.is_protected && createForm.value.password) {
+      const album = albumStore.albums[0]
+      await albumStore.setPassword(album.id, createForm.value.password)
+    }
+    showCreateDialog.value = false
+    createForm.value = {
+      name: '',
+      description: '',
+      is_protected: false,
+      password: ''
+    }
+    alert('相册创建成功！')
+  } catch (error) {
+    alert('创建失败：' + error.message)
+  }
+}
+
+const editAlbum = (album) => {
+  editForm.value = {
+    id: album.id,
+    name: album.name,
+    description: album.description || ''
+  }
+  showEditDialog.value = true
+}
+
+const handleEdit = async () => {
+  try {
+    await albumStore.updateAlbum(editForm.value.id, editForm.value)
+    showEditDialog.value = false
+    alert('更新成功！')
+  } catch (error) {
+    alert('更新失败：' + error.message)
+  }
+}
+
+const togglePassword = (album) => {
+  passwordForm.value = {
+    id: album.id,
+    is_protected: album.is_protected,
+    password: ''
+  }
+  showPasswordDialog.value = true
+}
+
+const handleSetPassword = async () => {
+  try {
+    if (passwordForm.value.is_protected) {
+      await albumStore.removePassword(passwordForm.value.id)
+      alert('密码已移除！')
+    } else {
+      await albumStore.setPassword(passwordForm.value.id, passwordForm.value.password)
+      alert('密码设置成功！')
+    }
+    showPasswordDialog.value = false
+    await albumStore.fetchAlbums()
+  } catch (error) {
+    alert('操作失败：' + error.message)
+  }
+}
+
+const deleteAlbum = async (id) => {
+  if (confirm('确定要删除这个相册吗？')) {
+    try {
+      await albumStore.deleteAlbum(id)
+      alert('删除成功！')
+    } catch (error) {
+      alert('删除失败：' + error.message)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.album-management {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+}
+
+.btn-primary {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.btn-primary:hover {
+  background: var(--accent-warm);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--text-secondary);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.albums-table {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: rgba(201, 169, 98, 0.1);
+}
+
+th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: 500;
+  color: var(--accent-gold);
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+}
+
+td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid rgba(201, 169, 98, 0.1);
+}
+
+.album-cover {
+  width: 60px;
+  height: 45px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.album-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-gold);
+  font-size: 1.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-protected {
+  background: rgba(201, 169, 98, 0.2);
+  color: var(--accent-gold);
+}
+
+.badge-public {
+  background: rgba(100, 200, 100, 0.2);
+  color: #64c864;
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid rgba(201, 169, 98, 0.2);
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(201, 169, 98, 0.1);
+  border-color: var(--accent-gold);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+}
+
+/* 对话框样式 */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.dialog-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 300;
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .albums-table {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 800px;
+  }
+}
+</style>

@@ -90,6 +90,18 @@ export const usePhotoStore = defineStore('photos', () => {
     }
   }
 
+  async function incrementViewCount(id) {
+    try {
+      await api.post(`/photos/${id}/view`)
+      const photo = photos.value.find(p => p.id === id)
+      if (photo) {
+        photo.view_count++
+      }
+    } catch (err) {
+      console.error('Error incrementing view count:', err)
+    }
+  }
+
   return {
     photos,
     currentPhoto,
@@ -99,6 +111,7 @@ export const usePhotoStore = defineStore('photos', () => {
     fetchPhoto,
     uploadPhoto,
     updatePhoto,
-    deletePhoto
+    deletePhoto,
+    incrementViewCount
   }
 })

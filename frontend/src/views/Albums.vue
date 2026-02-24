@@ -35,7 +35,10 @@
               <span>{{ album.name.charAt(0) }}</span>
             </div>
             <div class="album-overlay">
-              <h3 class="album-name">{{ album.name }}</h3>
+              <h3 class="album-name">
+                {{ album.name }}
+                <span v-if="album.is_protected" class="lock-icon">🔒</span>
+              </h3>
               <p class="album-count">{{ album.photos?.length || 0 }} 张照片</p>
             </div>
           </div>
@@ -209,6 +212,13 @@ const observeElements = () => {
   font-size: 1.8rem;
   font-weight: 300;
   margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.lock-icon {
+  font-size: 1.2rem;
 }
 
 .album-count {

@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"strconv"
 
+	"picsite/internal/middleware"
 	"picsite/internal/models"
 	"picsite/internal/services"
 
@@ -55,6 +58,28 @@ func (h *AlbumHandler) GetByID(c *gin.Context) {
 	if err := services.GetDB().Preload("Photos").First(&album, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Album not found"})
 		return
+	}
+
+	// 如果相册有密码保护，不返回照片数据
+	if album.IsProtected {
+		// 检查是否有有效的访问令牌
+		token := c.GetHeader("X-Album-Token")
+		if token == "" {
+			token, _ = c.Cookie("album_token")
+		}
+
+		session := middleware.SessionManagerInstance.GetSession(token)
+		if session == nil || session.AlbumID != album.ID {
+			// 返回基本信息，但不包括照片
+			c.JSON(http.StatusOK, gin.H{
+				"id":          album.ID,
+				"name":        album.Name,
+				"description": album.Description,
+				"is_protected": true,
+				"require_auth": true,
+			})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, album)
@@ -154,6 +179,100 @@ func (h *AlbumHandler) RemovePhotoFromAlbum(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Photo removed from album successfully"})
+}
+
+// VerifyPassword 验证相册密码
+func (h *AlbumHandler) VerifyPassword(c *gin.Context) {
+	id := c.Param("id")
+	var request struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var album models.Album
+	if err := services.GetDB().First(&album, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Album not found"})
+		return
+	}
+
+	// 验证密码
+	hashedPassword := hashPassword(request.Password)
+	if album.Password != hashedPassword {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "密码错误"})
+		return
+	}
+
+	// 生成会话 token
+	token := middleware.GenerateSessionToken(album.ID, request.Password)
+	middleware.SessionManagerInstance.SetSession(token, album.ID)
+
+	// 设置 cookie
+	c.SetCookie("album_token", token, 86400, "/", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "验证成功",
+		"token":   token,
+	})
+}
+
+// SetPassword 设置相册密码
+func (h *AlbumHandler) SetPassword(c *gin.Context) {
+	id := c.Param("id")
+	var request struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var album models.Album
+	if err := services.GetDB().First(&album, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Album not found"})
+		return
+	}
+
+	hashedPassword := hashPassword(request.Password)
+	album.Password = hashedPassword
+	album.IsProtected = true
+
+	if err := services.GetDB().Save(&album).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "密码设置成功"})
+}
+
+// RemovePassword 移除相册密码
+func (h *AlbumHandler) RemovePassword(c *gin.Context) {
+	id := c.Param("id")
+
+	var album models.Album
+	if err := services.GetDB().First(&album, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Album not found"})
+		return
+	}
+
+	album.Password = ""
+	album.IsProtected = false
+
+	if err := services.GetDB().Save(&album).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "密码已移除"})
+}
+
+func hashPassword(password string) string {
+	hash := sha256.Sum256([]byte(password))
+	return hex.EncodeToString(hash[:])
 }
 
 func parseUint(s string) uint {

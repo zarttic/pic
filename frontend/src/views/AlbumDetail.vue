@@ -1,5 +1,37 @@
 <template>
   <div class="album-detail-page">
+    <!-- 密码验证对话框 -->
+    <div v-if="showPasswordDialog" class="password-dialog-overlay" @click="closePasswordDialog">
+      <div class="password-dialog" @click.stop>
+        <h3 class="dialog-title">🔒 相册需要密码访问</h3>
+        <p class="dialog-subtitle">{{ albumStore.currentAlbum?.name }}</p>
+        <form @submit.prevent="handleVerifyPassword" class="password-form">
+          <div class="form-group">
+            <label for="password">请输入访问密码</label>
+            <input
+              id="password"
+              v-model="passwordInput"
+              type="password"
+              placeholder="输入密码"
+              required
+              autofocus
+            />
+          </div>
+          <div v-if="passwordError" class="error-message">
+            {{ passwordError }}
+          </div>
+          <div class="dialog-actions">
+            <button type="button" class="btn-secondary" @click="closePasswordDialog">
+              取消
+            </button>
+            <button type="submit" class="btn-primary" :disabled="verifying">
+              {{ verifying ? '验证中...' : '确认' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <section class="album-section">
       <div v-if="albumStore.loading" class="loading">
         加载中...
@@ -10,14 +42,24 @@
           <button class="back-button" @click="goBack">
             ← 返回
           </button>
-          <h2 class="album-title">{{ albumStore.currentAlbum.name }}</h2>
+          <h2 class="album-title">
+            {{ albumStore.currentAlbum.name }}
+            <span v-if="albumStore.currentAlbum.is_protected" class="protected-badge">🔒</span>
+          </h2>
           <p v-if="albumStore.currentAlbum.description" class="album-description">
             {{ albumStore.currentAlbum.description }}
           </p>
           <div class="section-divider"></div>
         </div>
 
-        <div v-if="albumStore.currentAlbum.photos?.length === 0" class="empty">
+        <div v-if="albumStore.currentAlbum.require_auth" class="empty">
+          <p>🔒 此相册需要密码访问</p>
+          <button class="btn-primary" @click="openPasswordDialog">
+            输入密码
+          </button>
+        </div>
+
+        <div v-else-if="!albumStore.currentAlbum.photos || albumStore.currentAlbum.photos.length === 0" class="empty">
           相册中暂无照片
         </div>
 
@@ -57,11 +99,45 @@ const route = useRoute()
 const router = useRouter()
 const albumStore = useAlbumStore()
 const selectedPhoto = ref(null)
+const showPasswordDialog = ref(false)
+const passwordInput = ref('')
+const passwordError = ref('')
+const verifying = ref(false)
 
-onMounted(() => {
+onMounted(async () => {
   const albumId = route.params.id
-  albumStore.fetchAlbum(albumId)
+  await albumStore.fetchAlbum(albumId)
+
+  // 如果需要验证，检查是否有保存的 token
+  if (albumStore.currentAlbum?.require_auth) {
+    const token = localStorage.getItem(`album_token_${albumId}`)
+    if (token) {
+      // 尝试使用保存的 token 获取相册数据
+      await fetchAlbumWithToken(albumId, token)
+    } else {
+      showPasswordDialog.value = true
+    }
+  }
 })
+
+const fetchAlbumWithToken = async (albumId, token) => {
+  try {
+    const response = await fetch(`/api/albums/${albumId}`, {
+      headers: {
+        'X-Album-Token': token
+      }
+    })
+    const data = await response.json()
+    if (!data.require_auth) {
+      albumStore.currentAlbum = data
+    } else {
+      showPasswordDialog.value = true
+    }
+  } catch (error) {
+    console.error('Error fetching album with token:', error)
+    showPasswordDialog.value = true
+  }
+}
 
 const goBack = () => {
   router.push('/albums')
@@ -76,12 +152,166 @@ const closeViewer = () => {
   selectedPhoto.value = null
   document.body.style.overflow = ''
 }
+
+const openPasswordDialog = () => {
+  showPasswordDialog.value = true
+  passwordInput.value = ''
+  passwordError.value = ''
+}
+
+const closePasswordDialog = () => {
+  showPasswordDialog.value = false
+  passwordInput.value = ''
+  passwordError.value = ''
+  if (albumStore.currentAlbum?.require_auth) {
+    router.push('/albums')
+  }
+}
+
+const handleVerifyPassword = async () => {
+  if (!passwordInput.value) return
+
+  verifying.value = true
+  passwordError.value = ''
+
+  try {
+    await albumStore.verifyPassword(route.params.id, passwordInput.value)
+    // 验证成功，重新获取相册数据
+    const token = localStorage.getItem(`album_token_${route.params.id}`)
+    await fetchAlbumWithToken(route.params.id, token)
+    closePasswordDialog()
+  } catch (error) {
+    passwordError.value = '密码错误，请重试'
+  } finally {
+    verifying.value = false
+  }
+}
 </script>
 
 <style scoped>
 .album-detail-page {
   min-height: 100vh;
   padding-top: 100px;
+}
+
+/* 密码对话框 */
+.password-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.password-dialog {
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.dialog-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.dialog-subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+}
+
+.form-group input {
+  background: var(--bg-primary);
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+}
+
+.btn-primary {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-warm);
+  transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--text-secondary);
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .album-section {
@@ -117,6 +347,14 @@ const closeViewer = () => {
   font-weight: 300;
   letter-spacing: 0.15em;
   margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.protected-badge {
+  font-size: 2rem;
 }
 
 .album-description {
@@ -139,6 +377,10 @@ const closeViewer = () => {
   text-align: center;
   padding: var(--spacing-xl);
   color: var(--text-secondary);
+}
+
+.empty p {
+  margin-bottom: var(--spacing-md);
 }
 
 .photos-grid {

@@ -97,6 +97,9 @@
             <div class="photo-info">
               <h4>{{ photo.title }}</h4>
               <p>{{ photo.location }}</p>
+              <p v-if="photo.view_count > 0" class="view-count">
+                {{ photo.view_count }} 次浏览
+              </p>
             </div>
             <button
               class="btn-delete"
@@ -475,6 +478,12 @@ input[type="file"] {
 .photo-info p {
   font-size: 0.85rem;
   color: var(--text-secondary);
+}
+
+.view-count {
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  margin-top: var(--spacing-xs);
 }
 
 .btn-delete {

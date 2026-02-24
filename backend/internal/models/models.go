@@ -29,14 +29,16 @@ type Photo struct {
 }
 
 type Album struct {
-	ID          uint           `json:"id" gorm:"primaryKey"`
-	Name        string         `json:"name" gorm:"not null"`
-	Description string         `json:"description"`
-	CoverPhotoID *uint         `json:"cover_photo_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
-	Photos      []Photo        `json:"photos" gorm:"many2many:album_photos;"`
+	ID           uint           `json:"id" gorm:"primaryKey"`
+	Name         string         `json:"name" gorm:"not null"`
+	Description  string         `json:"description"`
+	CoverPhotoID *uint          `json:"cover_photo_id"`
+	Password     string         `json:"-"` // 密码不返回给前端
+	IsProtected  bool           `json:"is_protected" gorm:"default:false"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+	Photos       []Photo        `json:"photos" gorm:"many2many:album_photos;"`
 }
 
 type AlbumPhoto struct {

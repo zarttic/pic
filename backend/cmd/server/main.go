@@ -55,6 +55,9 @@ func main() {
 			albums.DELETE("/:id", albumHandler.Delete)
 			albums.POST("/:id/photos", albumHandler.AddPhotoToAlbum)
 			albums.DELETE("/:id/photos/:photo_id", albumHandler.RemovePhotoFromAlbum)
+			albums.POST("/:id/verify", albumHandler.VerifyPassword)
+			albums.POST("/:id/password", albumHandler.SetPassword)
+			albums.DELETE("/:id/password", albumHandler.RemovePassword)
 		}
 
 		// 文件上传

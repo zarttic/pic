@@ -32,6 +32,54 @@ export const useAlbumStore = defineStore('albums', () => {
     } catch (err) {
       error.value = err.message
       console.error('Error fetching album:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function verifyPassword(id, password) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.post(`/albums/${id}/verify`, { password })
+      // 保存 token 到 localStorage
+      localStorage.setItem(`album_token_${id}`, response.data.token)
+      return response.data
+    } catch (err) {
+      error.value = err.message
+      console.error('Error verifying password:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function setPassword(id, password) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.post(`/albums/${id}/password`, { password })
+      return response.data
+    } catch (err) {
+      error.value = err.message
+      console.error('Error setting password:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function removePassword(id) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.delete(`/albums/${id}/password`)
+      return response.data
+    } catch (err) {
+      error.value = err.message
+      console.error('Error removing password:', err)
+      throw err
     } finally {
       loading.value = false
     }
@@ -129,6 +177,9 @@ export const useAlbumStore = defineStore('albums', () => {
     updateAlbum,
     deleteAlbum,
     addPhotoToAlbum,
-    removePhotoFromAlbum
+    removePhotoFromAlbum,
+    verifyPassword,
+    setPassword,
+    removePassword
   }
 })

@@ -25,6 +25,9 @@
           <div class="gallery-overlay">
             <h3 class="photo-title">{{ photo.title }}</h3>
             <p class="photo-meta">{{ photo.location }} · {{ photo.year }}</p>
+            <p v-if="photo.view_count > 0" class="photo-views">
+              {{ photo.view_count }} 次浏览
+            </p>
           </div>
         </div>
       </div>
@@ -53,9 +56,15 @@ onMounted(() => {
   observeElements()
 })
 
-const openViewer = (photo) => {
+const openViewer = async (photo) => {
   selectedPhoto.value = photo
   document.body.style.overflow = 'hidden'
+  // 记录访问次数
+  try {
+    await photoStore.incrementViewCount(photo.id)
+  } catch (error) {
+    console.error('Failed to increment view count:', error)
+  }
 }
 
 const closeViewer = () => {
@@ -205,6 +214,18 @@ const observeElements = () => {
 }
 
 .gallery-item:hover .photo-meta {
+  transform: translateY(0);
+}
+
+.photo-views {
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  margin-top: var(--spacing-xs);
+  transform: translateY(20px);
+  transition: transform 0.4s ease 0.15s;
+}
+
+.gallery-item:hover .photo-views {
   transform: translateY(0);
 }
 

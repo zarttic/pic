@@ -88,6 +88,34 @@ API 服务运行在 http://localhost:8080
 
 - `POST /api/photos/:id/view` - 增加浏览次数
 
+### 相册管理
+
+- `GET /api/albums` - 获取相册列表
+
+- `GET /api/albums/:id` - 获取单个相册详情
+  - 如果相册有密码保护，未验证时只返回基本信息
+
+- `POST /api/albums` - 创建新相册
+  - Content-Type: `application/json`
+
+- `PUT /api/albums/:id` - 更新相册信息
+
+- `DELETE /api/albums/:id` - 删除相册
+
+- `POST /api/albums/:id/photos` - 添加照片到相册
+  - Body: `{"photo_id": 1, "sort_order": 0}`
+
+- `DELETE /api/albums/:id/photos/:photo_id` - 从相册移除照片
+
+- `POST /api/albums/:id/verify` - 验证相册密码
+  - Body: `{"password": "your_password"}`
+  - 返回: 访问令牌（24小时有效）
+
+- `POST /api/albums/:id/password` - 设置相册密码
+  - Body: `{"password": "your_password"}`
+
+- `DELETE /api/albums/:id/password` - 移除相册密码
+
 ### 文件上传
 
 - `POST /api/upload` - 上传图片文件

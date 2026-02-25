@@ -126,6 +126,7 @@ npm run build
 - [迭代报告](./ITERATION_REPORT.md)
 - [测试指南](./TESTING_GUIDE.md)
 - [Phase 3 总结](./PHASE3_SUMMARY.md)
+- [Phase 4 总结](./PHASE4_SUMMARY.md)
 
 ## 🗂️ 项目结构
 
@@ -304,7 +305,15 @@ services:
 
 ## 📝 版本历史
 
-### v0.5.0 (当前)
+### v0.6.0 (当前)
+- ✅ Phase 4: 功能增强与代码优化
+- 批量操作（选择、删除、标签、精选）
+- 实时搜索和多条件筛选
+- 标签管理系统
+- 图片预览和上传进度组件
+- Gallery 页面性能优化
+
+### v0.5.0
 - ✅ Phase 3: 用户体验优化
 - 骨架屏加载
 - 图片懒加载

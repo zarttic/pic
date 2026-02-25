@@ -4,7 +4,9 @@
       <h2 class="page-title">系统设置</h2>
     </div>
 
-    <div class="settings-sections">
+    <SettingsSkeleton v-if="loading" />
+
+    <div v-else class="settings-sections">
       <div class="settings-card">
         <h3 class="section-title">网站信息</h3>
         <form @submit.prevent="saveSiteSettings" class="settings-form">
@@ -90,7 +92,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useNotificationStore } from '../../stores/notification'
+import { useConfirm } from '../../composables/useConfirm'
+import SettingsSkeleton from '../../components/SettingsSkeleton.vue'
+
+const notification = useNotificationStore()
+const confirm = useConfirm()
+const loading = ref(true)
 
 const siteSettings = ref({
   title: 'PicSite',
@@ -98,20 +107,34 @@ const siteSettings = ref({
   author: ''
 })
 
+onMounted(() => {
+  // 模拟加载延迟
+  setTimeout(() => {
+    loading.value = false
+  }, 500)
+})
+
 const saveSiteSettings = () => {
   localStorage.setItem('siteSettings', JSON.stringify(siteSettings.value))
-  alert('设置已保存！')
+  notification.success('设置已保存！')
 }
 
-const clearCache = () => {
-  if (confirm('确定要清空缓存吗？这不会删除照片和相册数据。')) {
+const clearCache = async () => {
+  const result = await confirm({
+    type: 'warning',
+    title: '清空缓存',
+    message: '确定要清空缓存吗？这不会删除照片和相册数据。',
+    confirmText: '清空'
+  })
+
+  if (result) {
     localStorage.clear()
-    alert('缓存已清空！')
+    notification.success('缓存已清空！')
   }
 }
 
 const exportData = () => {
-  alert('数据导出功能开发中...')
+  notification.info('数据导出功能开发中...')
 }
 </script>
 

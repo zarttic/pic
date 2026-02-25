@@ -48,92 +48,13 @@
     <!-- 上传表单 -->
     <div class="upload-section">
       <h3 class="subsection-title">上传新照片</h3>
-      <form @submit.prevent="handleUpload" class="upload-form">
-        <div class="form-group">
-          <label for="title">标题</label>
-          <input
-            id="title"
-            v-model="uploadForm.title"
-            type="text"
-            required
-            placeholder="照片标题"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="location">拍摄地点</label>
-          <input
-            id="location"
-            v-model="uploadForm.location"
-            type="text"
-            placeholder="拍摄地点"
-          />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="year">年份</label>
-            <input
-              id="year"
-              v-model="uploadForm.year"
-              type="number"
-              placeholder="2024"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="camera">相机</label>
-            <input
-              id="camera"
-              v-model="uploadForm.camera_model"
-              type="text"
-              placeholder="相机型号"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="description">描述</label>
-          <textarea
-            id="description"
-            v-model="uploadForm.description"
-            rows="3"
-            placeholder="照片描述"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="tags">标签</label>
-          <input
-            id="tags"
-            v-model="uploadForm.tags"
-            type="text"
-            placeholder="标签，用逗号分隔"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="file">选择照片</label>
-          <input
-            id="file"
-            type="file"
-            accept="image/*"
-            @change="handleFileSelect"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="uploadForm.is_featured" />
-            设为精选
-          </label>
-        </div>
-
-        <button type="submit" class="btn-primary" :disabled="uploading">
-          {{ uploading ? '上传中...' : '上传照片' }}
-        </button>
-      </form>
+      <PhotoForm
+        ref="uploadFormRef"
+        mode="create"
+        :is-submitting="uploading"
+        submit-text="上传中..."
+        @submit="handleUpload"
+      />
     </div>
 
     <!-- 照片列表 -->
@@ -208,81 +129,15 @@
     <div v-if="editDialogVisible" class="dialog-overlay" @click="closeEditDialog">
       <div class="dialog-content" @click.stop>
         <h3 class="dialog-title">编辑照片</h3>
-        <form @submit.prevent="handleEdit" class="edit-form">
-          <div class="form-group">
-            <label for="edit-title">标题</label>
-            <input
-              id="edit-title"
-              v-model="editForm.title"
-              type="text"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="edit-location">拍摄地点</label>
-            <input
-              id="edit-location"
-              v-model="editForm.location"
-              type="text"
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="edit-year">年份</label>
-              <input
-                id="edit-year"
-                v-model="editForm.year"
-                type="number"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="edit-camera">相机</label>
-              <input
-                id="edit-camera"
-                v-model="editForm.camera_model"
-                type="text"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="edit-description">描述</label>
-            <textarea
-              id="edit-description"
-              v-model="editForm.description"
-              rows="3"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="edit-tags">标签</label>
-            <input
-              id="edit-tags"
-              v-model="editForm.tagsInput"
-              type="text"
-              placeholder="标签，用逗号分隔"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="editForm.is_featured" />
-              设为精选
-            </label>
-          </div>
-
-          <div class="dialog-actions">
-            <button type="button" class="btn-secondary" @click="closeEditDialog">
-              取消
-            </button>
-            <button type="submit" class="btn-primary">
-              保存
-            </button>
-          </div>
-        </form>
+        <PhotoForm
+          ref="editFormRef"
+          mode="edit"
+          :initial-data="editPhotoData"
+          :is-submitting="updating"
+          submit-text="保存中..."
+          @submit="handleEdit"
+          @cancel="closeEditDialog"
+        />
       </div>
     </div>
   </div>
@@ -292,12 +147,19 @@
 import { ref, onMounted, computed } from 'vue'
 import { usePhotoStore } from '../../stores/photos'
 import { useNotificationStore } from '../../stores/notification'
+import { useConfirm } from '../../composables/useConfirm'
 import { getImageUrl } from '../../utils/index'
 import PhotoGridSkeleton from '../../components/PhotoGridSkeleton.vue'
+import PhotoForm from '../../components/PhotoForm.vue'
 
 const photoStore = usePhotoStore()
 const notification = useNotificationStore()
+const confirm = useConfirm()
+
+const uploadFormRef = ref(null)
+const editFormRef = ref(null)
 const uploading = ref(false)
+const updating = ref(false)
 const editDialogVisible = ref(false)
 
 const selectedPhotos = ref([])
@@ -305,32 +167,7 @@ const searchQuery = ref('')
 const filterYear = ref('')
 const filterFeatured = ref('')
 
-const uploadForm = ref({
-  title: '',
-  description: '',
-  location: '',
-  year: new Date().getFullYear(),
-  camera_model: '',
-  lens: '',
-  aperture: '',
-  shutter_speed: '',
-  iso: null,
-  tags: '',
-  is_featured: false
-})
-
-const editForm = ref({
-  id: null,
-  title: '',
-  description: '',
-  location: '',
-  year: null,
-  camera_model: '',
-  tagsInput: '',
-  is_featured: false
-})
-
-const selectedFile = ref(null)
+const editPhotoData = ref(null)
 
 // 计算属性
 const uniqueYears = computed(() => {
@@ -377,49 +214,23 @@ onMounted(() => {
   photoStore.fetchPhotos()
 })
 
-const handleFileSelect = (event) => {
-  selectedFile.value = event.target.files[0]
-}
-
-const handleUpload = async () => {
-  if (!selectedFile.value) {
-    notification.error('请选择照片文件')
-    return
-  }
-
+// 处理上传
+const handleUpload = async (formData) => {
   uploading.value = true
-  const formData = new FormData()
-  formData.append('file', selectedFile.value)
-  formData.append('title', uploadForm.value.title)
-  formData.append('description', uploadForm.value.description || '')
-  formData.append('location', uploadForm.value.location || '')
-  formData.append('year', uploadForm.value.year || new Date().getFullYear())
-  formData.append('camera_model', uploadForm.value.camera_model || '')
-  formData.append('lens', uploadForm.value.lens || '')
-  formData.append('aperture', uploadForm.value.aperture || '')
-  formData.append('shutter_speed', uploadForm.value.shutter_speed || '')
-  formData.append('iso', uploadForm.value.iso || 0)
-  formData.append('tags', uploadForm.value.tags || '')
-  formData.append('is_featured', uploadForm.value.is_featured)
+
+  const uploadData = new FormData()
+  uploadData.append('file', formData.file)
+  uploadData.append('title', formData.title)
+  uploadData.append('description', formData.description || '')
+  uploadData.append('location', formData.location || '')
+  uploadData.append('year', formData.year || new Date().getFullYear())
+  uploadData.append('camera_model', formData.camera_model || '')
+  uploadData.append('tags', formData.tags.join(','))
+  uploadData.append('is_featured', formData.is_featured)
 
   try {
-    await photoStore.uploadPhoto(formData)
-    // 重置表单
-    uploadForm.value = {
-      title: '',
-      description: '',
-      location: '',
-      year: new Date().getFullYear(),
-      camera_model: '',
-      lens: '',
-      aperture: '',
-      shutter_speed: '',
-      iso: null,
-      tags: '',
-      is_featured: false
-    }
-    selectedFile.value = null
-    document.getElementById('file').value = ''
+    await photoStore.uploadPhoto(uploadData)
+    uploadFormRef.value?.resetForm()
     notification.success('照片上传成功！')
   } catch (error) {
     notification.error('上传失败：' + error.message)
@@ -428,8 +239,16 @@ const handleUpload = async () => {
   }
 }
 
+// 处理删除
 const handleDelete = async (id) => {
-  if (confirm('确定要删除这张照片吗？')) {
+  const result = await confirm({
+    type: 'danger',
+    title: '删除照片',
+    message: '确定要删除这张照片吗？此操作不可撤销。',
+    confirmText: '删除'
+  })
+
+  if (result) {
     try {
       await photoStore.deletePhoto(id)
       notification.success('删除成功！')
@@ -439,10 +258,16 @@ const handleDelete = async (id) => {
   }
 }
 
+// 批量删除
 const handleBatchDelete = async () => {
-  if (!confirm(`确定要删除选中的 ${selectedPhotos.value.length} 张照片吗？`)) {
-    return
-  }
+  const result = await confirm({
+    type: 'danger',
+    title: '批量删除照片',
+    message: `确定要删除选中的 ${selectedPhotos.value.length} 张照片吗？此操作不可撤销。`,
+    confirmText: '删除'
+  })
+
+  if (!result) return
 
   try {
     await photoStore.batchDelete(selectedPhotos.value)
@@ -453,6 +278,34 @@ const handleBatchDelete = async () => {
   }
 }
 
+// 打开编辑对话框
+const openEditDialog = (photo) => {
+  editPhotoData.value = photo
+  editDialogVisible.value = true
+}
+
+// 关闭编辑对话框
+const closeEditDialog = () => {
+  editDialogVisible.value = false
+  editPhotoData.value = null
+}
+
+// 处理编辑
+const handleEdit = async (formData) => {
+  updating.value = true
+
+  try {
+    await photoStore.updatePhoto(editPhotoData.value.id, formData)
+    notification.success('更新成功！')
+    closeEditDialog()
+  } catch (error) {
+    notification.error('更新失败：' + error.message)
+  } finally {
+    updating.value = false
+  }
+}
+
+// 选择操作
 const togglePhotoSelection = (id) => {
   const index = selectedPhotos.value.indexOf(id)
   if (index > -1) {
@@ -475,59 +328,11 @@ const clearSelection = () => {
 }
 
 const handleSearch = () => {
-  // 搜索时清空选择
   selectedPhotos.value = []
 }
 
 const handleFilter = () => {
-  // 筛选时清空选择
   selectedPhotos.value = []
-}
-
-const openEditDialog = (photo) => {
-  editForm.value = {
-    id: photo.id,
-    title: photo.title,
-    description: photo.description || '',
-    location: photo.location || '',
-    year: photo.year,
-    camera_model: photo.camera_model || '',
-    tagsInput: photo.tags ? photo.tags.join(', ') : '',
-    is_featured: photo.is_featured || false
-  }
-  editDialogVisible.value = true
-}
-
-const closeEditDialog = () => {
-  editDialogVisible.value = false
-  editForm.value = {
-    id: null,
-    title: '',
-    description: '',
-    location: '',
-    year: null,
-    camera_model: '',
-    tagsInput: '',
-    is_featured: false
-  }
-}
-
-const handleEdit = async () => {
-  try {
-    const updateData = {
-      ...editForm.value,
-      tags: editForm.value.tagsInput
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag)
-    }
-
-    await photoStore.updatePhoto(editForm.value.id, updateData)
-    notification.success('更新成功！')
-    closeEditDialog()
-  } catch (error) {
-    notification.error('更新失败：' + error.message)
-  }
 }
 </script>
 
@@ -621,39 +426,6 @@ const handleEdit = async () => {
   letter-spacing: 0.1em;
 }
 
-.upload-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
-}
-
-label {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  cursor: pointer;
-  text-transform: none;
-}
-
 .select-all-label {
   display: flex;
   align-items: center;
@@ -668,29 +440,6 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-input,
-textarea {
-  background: var(--bg-primary);
-  border: 1px solid rgba(201, 169, 98, 0.3);
-  color: var(--text-primary);
-  padding: 0.75rem;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--accent-gold);
-}
-
-input[type="file"] {
-  cursor: pointer;
-}
-
-.btn-primary,
 .btn-secondary,
 .btn-danger {
   padding: 0.75rem 1.5rem;
@@ -701,21 +450,6 @@ input[type="file"] {
   transition: all 0.3s ease;
   border-radius: 4px;
   border: none;
-}
-
-.btn-primary {
-  background: var(--accent-gold);
-  color: var(--bg-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-warm);
-  transform: translateY(-2px);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -892,24 +626,7 @@ input[type="file"] {
   text-align: center;
 }
 
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.dialog-actions {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: flex-end;
-  margin-top: var(--spacing-md);
-}
-
 @media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
   .filter-section {
     flex-direction: column;
   }

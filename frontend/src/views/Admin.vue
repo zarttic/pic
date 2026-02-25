@@ -83,7 +83,7 @@
       <!-- 照片列表 -->
       <div class="photos-list">
         <h3 class="subsection-title">已上传照片</h3>
-        <div v-if="photoStore.loading" class="loading">加载中...</div>
+        <PhotoGridSkeleton v-if="photoStore.loading" :count="6" />
         <div v-else-if="photoStore.photos.length === 0" class="empty">
           暂无照片
         </div>
@@ -195,8 +195,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { usePhotoStore } from '../stores/photos'
+import { useNotificationStore } from '../stores/notification'
+import { useConfirm } from '../composables/useConfirm'
+import PhotoGridSkeleton from '../components/PhotoGridSkeleton.vue'
 
 const photoStore = usePhotoStore()
+const notification = useNotificationStore()
+const confirm = useConfirm()
 const uploading = ref(false)
 const editDialogVisible = ref(false)
 
@@ -264,21 +269,28 @@ const handleUpload = async () => {
     }
     selectedFile.value = null
     document.getElementById('file').value = ''
-    alert('上传成功！')
+    notification.success('上传成功！')
   } catch (error) {
-    alert('上传失败：' + error.message)
+    notification.error('上传失败：' + error.message)
   } finally {
     uploading.value = false
   }
 }
 
 const handleDelete = async (id) => {
-  if (confirm('确定要删除这张照片吗？')) {
+  const result = await confirm({
+    type: 'danger',
+    title: '删除照片',
+    message: '确定要删除这张照片吗？此操作不可撤销。',
+    confirmText: '删除'
+  })
+
+  if (result) {
     try {
       await photoStore.deletePhoto(id)
-      alert('删除成功！')
+      notification.success('删除成功！')
     } catch (error) {
-      alert('删除失败：' + error.message)
+      notification.error('删除失败：' + error.message)
     }
   }
 }
@@ -312,10 +324,10 @@ const closeEditDialog = () => {
 const handleEdit = async () => {
   try {
     await photoStore.updatePhoto(editForm.value.id, editForm.value)
-    alert('更新成功！')
+    notification.success('更新成功！')
     closeEditDialog()
   } catch (error) {
-    alert('更新失败：' + error.message)
+    notification.error('更新失败：' + error.message)
   }
 }
 </script>
@@ -438,7 +450,6 @@ input[type="file"] {
   cursor: not-allowed;
 }
 
-.loading,
 .empty {
   text-align: center;
   padding: var(--spacing-lg);

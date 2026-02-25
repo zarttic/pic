@@ -149,12 +149,14 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAlbumStore } from '../../stores/albums'
 import { useNotificationStore } from '../../stores/notification'
+import { useConfirm } from '../../composables/useConfirm'
 import { getImageUrl } from '../../utils/index'
 import PhotoGridSkeleton from '../../components/PhotoGridSkeleton.vue'
 
 const router = useRouter()
 const albumStore = useAlbumStore()
 const notification = useNotificationStore()
+const confirm = useConfirm()
 const showCreateDialog = ref(false)
 const showEditDialog = ref(false)
 const showPasswordDialog = ref(false)
@@ -267,7 +269,14 @@ const handleSetPassword = async () => {
 }
 
 const deleteAlbum = async (id) => {
-  if (confirm('确定要删除这个相册吗？')) {
+  const result = await confirm({
+    type: 'danger',
+    title: '删除相册',
+    message: '确定要删除这个相册吗？相册内的照片不会被删除，只会移除关联关系。',
+    confirmText: '删除'
+  })
+
+  if (result) {
     try {
       await albumStore.deleteAlbum(id)
       notification.success('删除成功！')

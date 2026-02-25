@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '../api'
+import { handleError } from '../utils/errorHandler'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
         return { success: true }
       } catch (error) {
         const message = error.response?.data?.error || '登录失败'
+        handleError(error, '登录', { showToast: false })
         return { success: false, error: message }
       }
     },
@@ -38,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         await api.post('/auth/logout')
       } catch (error) {
-        console.error('Logout error:', error)
+        handleError(error, '登出', { showToast: false })
       } finally {
         this.clearAuth()
       }

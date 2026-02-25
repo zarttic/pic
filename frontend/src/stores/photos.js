@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '../api'
+import { handleError } from '../utils/errorHandler'
 
 export const usePhotoStore = defineStore('photos', () => {
   const photos = ref([])
@@ -16,7 +17,7 @@ export const usePhotoStore = defineStore('photos', () => {
       photos.value = response.data.data || response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching photos:', err)
+      handleError(err, '获取照片列表')
     } finally {
       loading.value = false
     }
@@ -30,7 +31,8 @@ export const usePhotoStore = defineStore('photos', () => {
       currentPhoto.value = response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching photo:', err)
+      handleError(err, '获取照片详情')
+      throw err
     } finally {
       loading.value = false
     }
@@ -49,7 +51,7 @@ export const usePhotoStore = defineStore('photos', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error uploading photo:', err)
+      handleError(err, '上传照片')
       throw err
     } finally {
       loading.value = false
@@ -68,7 +70,7 @@ export const usePhotoStore = defineStore('photos', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error updating photo:', err)
+      handleError(err, '更新照片')
       throw err
     } finally {
       loading.value = false
@@ -83,7 +85,7 @@ export const usePhotoStore = defineStore('photos', () => {
       photos.value = photos.value.filter(p => p.id !== id)
     } catch (err) {
       error.value = err.message
-      console.error('Error deleting photo:', err)
+      handleError(err, '删除照片')
       throw err
     } finally {
       loading.value = false
@@ -98,7 +100,8 @@ export const usePhotoStore = defineStore('photos', () => {
         photo.view_count++
       }
     } catch (err) {
-      console.error('Error incrementing view count:', err)
+      // 浏览计数失败不影响用户体验，仅记录
+      handleError(err, '更新浏览次数', { showToast: false })
     }
   }
 
@@ -110,7 +113,7 @@ export const usePhotoStore = defineStore('photos', () => {
       photos.value = photos.value.filter(p => !ids.includes(p.id))
     } catch (err) {
       error.value = err.message
-      console.error('Error batch deleting photos:', err)
+      handleError(err, '批量删除照片')
       throw err
     } finally {
       loading.value = false
@@ -130,7 +133,7 @@ export const usePhotoStore = defineStore('photos', () => {
       })
     } catch (err) {
       error.value = err.message
-      console.error('Error batch updating tags:', err)
+      handleError(err, '批量更新标签')
       throw err
     } finally {
       loading.value = false
@@ -150,7 +153,7 @@ export const usePhotoStore = defineStore('photos', () => {
       })
     } catch (err) {
       error.value = err.message
-      console.error('Error batch setting featured:', err)
+      handleError(err, '批量设置精选')
       throw err
     } finally {
       loading.value = false

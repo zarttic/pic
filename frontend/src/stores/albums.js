@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '../api'
+import { handleError } from '../utils/errorHandler'
 
 export const useAlbumStore = defineStore('albums', () => {
   const albums = ref([])
@@ -16,7 +17,7 @@ export const useAlbumStore = defineStore('albums', () => {
       albums.value = response.data.data || response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching albums:', err)
+      handleError(err, '获取相册列表')
     } finally {
       loading.value = false
     }
@@ -31,7 +32,7 @@ export const useAlbumStore = defineStore('albums', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching album:', err)
+      handleError(err, '获取相册详情')
       throw err
     } finally {
       loading.value = false
@@ -48,7 +49,7 @@ export const useAlbumStore = defineStore('albums', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error verifying password:', err)
+      handleError(err, '验证密码')
       throw err
     } finally {
       loading.value = false
@@ -63,7 +64,7 @@ export const useAlbumStore = defineStore('albums', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error setting password:', err)
+      handleError(err, '设置密码')
       throw err
     } finally {
       loading.value = false
@@ -78,7 +79,7 @@ export const useAlbumStore = defineStore('albums', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error removing password:', err)
+      handleError(err, '移除密码')
       throw err
     } finally {
       loading.value = false
@@ -94,7 +95,7 @@ export const useAlbumStore = defineStore('albums', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error creating album:', err)
+      handleError(err, '创建相册')
       throw err
     } finally {
       loading.value = false
@@ -113,7 +114,7 @@ export const useAlbumStore = defineStore('albums', () => {
       return response.data
     } catch (err) {
       error.value = err.message
-      console.error('Error updating album:', err)
+      handleError(err, '更新相册')
       throw err
     } finally {
       loading.value = false
@@ -128,7 +129,7 @@ export const useAlbumStore = defineStore('albums', () => {
       albums.value = albums.value.filter(a => a.id !== id)
     } catch (err) {
       error.value = err.message
-      console.error('Error deleting album:', err)
+      handleError(err, '删除相册')
       throw err
     } finally {
       loading.value = false
@@ -145,7 +146,7 @@ export const useAlbumStore = defineStore('albums', () => {
       })
     } catch (err) {
       error.value = err.message
-      console.error('Error adding photo to album:', err)
+      handleError(err, '添加照片到相册')
       throw err
     } finally {
       loading.value = false
@@ -159,7 +160,7 @@ export const useAlbumStore = defineStore('albums', () => {
       await api.delete(`/albums/${albumId}/photos/${photoId}`)
     } catch (err) {
       error.value = err.message
-      console.error('Error removing photo from album:', err)
+      handleError(err, '从相册移除照片')
       throw err
     } finally {
       loading.value = false

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { handleError } from '../utils/errorHandler'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
@@ -29,6 +30,11 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     if (error.response) {
+      // 开发环境记录错误
+      if (import.meta.env.DEV) {
+        console.error(`API Error [${error.response.status}]:`, error.response.data)
+      }
+
       switch (error.response.status) {
         case 401:
           // 如果是刷新令牌失败，直接清除认证信息
@@ -69,14 +75,6 @@ api.interceptors.response.use(
             window.location.href = '/admin/login'
           }
           break
-        case 404:
-          console.error('Resource not found')
-          break
-        case 500:
-          console.error('Server error')
-          break
-        default:
-          console.error('API Error:', error.response.data)
       }
     }
     return Promise.reject(error)

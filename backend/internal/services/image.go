@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	ThumbnailWidth  = 400
-	ThumbnailHeight = 0 // 0 means auto height based on aspect ratio
+	ThumbnailWidth   = 400
+	ThumbnailHeight  = 0 // 0 means auto height based on aspect ratio
 	ThumbnailQuality = 85
 )
 

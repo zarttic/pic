@@ -71,9 +71,9 @@ func (h *AlbumHandler) GetByID(c *gin.Context) {
 		if session == nil || session.AlbumID != album.ID {
 			// 返回基本信息，但不包括照片
 			c.JSON(http.StatusOK, gin.H{
-				"id":          album.ID,
-				"name":        album.Name,
-				"description": album.Description,
+				"id":           album.ID,
+				"name":         album.Name,
+				"description":  album.Description,
 				"is_protected": true,
 				"require_auth": true,
 			})

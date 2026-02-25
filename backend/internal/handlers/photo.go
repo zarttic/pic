@@ -331,7 +331,7 @@ func (h *PhotoHandler) BatchUpdateTags(c *gin.Context) {
 // BatchUpdateFeatured 批量设置精选
 func (h *PhotoHandler) BatchUpdateFeatured(c *gin.Context) {
 	var request struct {
-		IDs       []uint `json:"ids" binding:"required,min=1,max=100"`
+		IDs        []uint `json:"ids" binding:"required,min=1,max=100"`
 		IsFeatured bool   `json:"is_featured"`
 	}
 
@@ -429,8 +429,8 @@ func (h *PhotoHandler) UploadFile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"file_path":      "/" + uploadPath,
-		"original_name":  file.Filename,
+		"file_path":     "/" + uploadPath,
+		"original_name": file.Filename,
 		"size":          file.Size,
 	})
 }

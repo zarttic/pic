@@ -95,6 +95,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAlbumStore } from '../stores/albums'
 import { getImageUrl } from '../utils/index'
+import api from '../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,7 +108,8 @@ const verifying = ref(false)
 
 onMounted(async () => {
   const albumId = route.params.id
-  await albumStore.fetchAlbum(albumId)
+  // 使用 fetchAlbumPublic 避免发送 JWT token
+  await albumStore.fetchAlbumPublic(albumId)
 
   // 如果需要验证，检查是否有保存的 token
   if (albumStore.currentAlbum?.require_auth) {
@@ -123,20 +125,31 @@ onMounted(async () => {
 
 const fetchAlbumWithToken = async (albumId, token) => {
   try {
-    const response = await fetch(`/api/albums/${albumId}`, {
+    // 前台访问相册时，创建一个新的 axios 实例，不使用 JWT token
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/albums/${albumId}`, {
       headers: {
         'X-Album-Token': token
       }
     })
     const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch album')
+    }
+
+    // 如果返回的数据不包含 require_auth 或 require_auth 为 false,说明验证成功
     if (!data.require_auth) {
       albumStore.currentAlbum = data
+      showPasswordDialog.value = false
+      return true
     } else {
       showPasswordDialog.value = true
+      return false
     }
   } catch (error) {
     console.error('Error fetching album with token:', error)
     showPasswordDialog.value = true
+    return false
   }
 }
 
@@ -180,7 +193,10 @@ const handleVerifyPassword = async () => {
     // 验证成功，重新获取相册数据
     const token = localStorage.getItem(`album_token_${route.params.id}`)
     await fetchAlbumWithToken(route.params.id, token)
-    closePasswordDialog()
+    // 成功获取数据后关闭对话框(不调用 closePasswordDialog,避免跳转)
+    showPasswordDialog.value = false
+    passwordInput.value = ''
+    passwordError.value = ''
   } catch (error) {
     passwordError.value = '密码错误，请重试'
   } finally {

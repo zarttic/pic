@@ -35,8 +35,16 @@ api.interceptors.response.use(
         console.error(`API Error [${error.response.status}]:`, error.response.data)
       }
 
+      // 检查是否是相册密码验证错误(不跳转登录页)
+      const isAlbumVerifyError = originalRequest.url?.includes('/albums/') && originalRequest.url?.includes('/verify')
+
       switch (error.response.status) {
         case 401:
+          // 如果是相册密码验证失败,不跳转登录页
+          if (isAlbumVerifyError) {
+            break
+          }
+
           // 如果是刷新令牌失败，直接清除认证信息
           if (originalRequest.url === '/auth/refresh') {
             localStorage.removeItem('token')

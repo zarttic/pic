@@ -1,108 +1,90 @@
 <template>
-  <nav class="navigation">
-    <div class="logo">光迹</div>
-    <ul class="nav-links">
-      <li>
-        <router-link to="/" @click="closeMobileMenu">首页</router-link>
-      </li>
-      <li>
-        <router-link to="/gallery" @click="closeMobileMenu">作品</router-link>
-      </li>
-      <li>
-        <router-link to="/albums" @click="closeMobileMenu">相册</router-link>
-      </li>
-      <li>
-        <router-link to="/about" @click="closeMobileMenu">关于</router-link>
-      </li>
-      <li>
-        <router-link to="/admin/photos" @click="closeMobileMenu">管理</router-link>
-      </li>
-    </ul>
-  </nav>
+  <v-app-bar
+    flat
+    :height="80"
+    class="navigation"
+  >
+    <v-toolbar-title class="logo">光迹</v-toolbar-title>
+
+    <v-spacer></v-spacer>
+
+    <v-btn
+      v-for="link in navLinks"
+      :key="link.path"
+      :to="link.path"
+      variant="text"
+      class="nav-link"
+      :ripple="false"
+    >
+      {{ link.text }}
+    </v-btn>
+  </v-app-bar>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-
-const mobileMenuOpen = ref(false)
-
-const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
+const navLinks = [
+  { path: '/', text: '首页' },
+  { path: '/gallery', text: '作品' },
+  { path: '/albums', text: '相册' },
+  { path: '/about', text: '关于' },
+  { path: '/admin/photos', text: '管理' },
+]
 </script>
 
 <style scoped>
 .navigation {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: var(--spacing-md) var(--spacing-lg);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.95) 0%, transparent 100%);
+  position: fixed !important;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.95) 0%, transparent 100%) !important;
   backdrop-filter: blur(10px);
 }
 
 .logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.8rem;
-  font-weight: 300;
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 1.8rem !important;
+  font-weight: 300 !important;
   letter-spacing: 0.3em;
-  color: var(--accent-gold);
+  color: var(--accent-gold) !important;
 }
 
-.nav-links {
-  display: flex;
-  gap: var(--spacing-md);
-  list-style: none;
-}
-
-.nav-links a {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 200;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  transition: color 0.3s ease;
+.nav-link {
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+  font-weight: 200 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
   position: relative;
+  transition: color 0.3s ease;
 }
 
-.nav-links a::after {
+.nav-link::after {
   content: '';
   position: absolute;
-  bottom: -5px;
-  left: 0;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 0;
   height: 1px;
   background: var(--accent-gold);
   transition: width 0.3s ease;
 }
 
-.nav-links a:hover,
-.nav-links a.router-link-active {
-  color: var(--text-primary);
+.nav-link:hover,
+.nav-link.v-btn--active {
+  color: var(--text-primary) !important;
 }
 
-.nav-links a:hover::after,
-.nav-links a.router-link-active::after {
-  width: 100%;
+.nav-link:hover::after,
+.nav-link.v-btn--active::after {
+  width: 80%;
 }
 
 @media (max-width: 768px) {
   .navigation {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 0 var(--spacing-md) !important;
   }
 
-  .nav-links {
-    gap: var(--spacing-sm);
-  }
-
-  .nav-links a {
-    font-size: 0.75rem;
+  .nav-link {
+    font-size: 0.75rem !important;
   }
 }
 </style>

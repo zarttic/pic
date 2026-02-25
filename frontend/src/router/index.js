@@ -53,6 +53,11 @@ const routes = [
         component: () => import('../views/admin/AlbumManagement.vue')
       },
       {
+        path: 'albums/:id/photos',
+        name: 'AdminAlbumPhotos',
+        component: () => import('../views/admin/AlbumPhotoManagement.vue')
+      },
+      {
         path: 'statistics',
         name: 'AdminStatistics',
         component: () => import('../views/admin/Statistics.vue')

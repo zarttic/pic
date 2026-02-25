@@ -39,6 +39,31 @@ export const useAlbumStore = defineStore('albums', () => {
     }
   }
 
+  async function fetchAlbumPublic(id) {
+    loading.value = true
+    error.value = null
+    try {
+      // 使用原生 fetch，不发送 JWT token
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+      const response = await fetch(`${apiUrl}/albums/${id}`)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to fetch album')
+      }
+
+      const data = await response.json()
+      currentAlbum.value = data
+      return data
+    } catch (err) {
+      error.value = err.message
+      handleError(err, '获取相册详情')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function verifyPassword(id, password) {
     loading.value = true
     error.value = null
@@ -174,6 +199,7 @@ export const useAlbumStore = defineStore('albums', () => {
     error,
     fetchAlbums,
     fetchAlbum,
+    fetchAlbumPublic,
     createAlbum,
     updateAlbum,
     deleteAlbum,

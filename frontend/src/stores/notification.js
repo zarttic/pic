@@ -16,17 +16,11 @@ export const useNotificationStore = defineStore('notification', () => {
       type: notification.type || 'info',
       title: notification.title || '',
       message: notification.message || '',
-      duration: notification.duration !== undefined ? notification.duration : 3000
+      duration: notification.duration !== undefined ? notification.duration : 3000,
+      visible: true // Vuetify snackbar 需要的属性
     }
 
     notifications.value.push(newNotification)
-
-    // 自动移除
-    if (newNotification.duration > 0) {
-      setTimeout(() => {
-        remove(id)
-      }, newNotification.duration)
-    }
 
     return id
   }

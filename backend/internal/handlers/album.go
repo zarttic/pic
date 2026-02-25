@@ -59,8 +59,16 @@ func (h *AlbumHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	// 如果相册有密码保护，不返回照片数据
-	if album.IsProtected {
+	// 检查是否是管理员访问(通过JWT token)
+	isAdmin := false
+	authHeader := c.GetHeader("Authorization")
+	if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		// 如果有Bearer token,说明是管理员访问
+		isAdmin = true
+	}
+
+	// 如果相册有密码保护且不是管理员访问,需要验证权限
+	if album.IsProtected && !isAdmin {
 		// 检查是否有有效的访问令牌
 		token := c.GetHeader("X-Album-Token")
 		if token == "" {

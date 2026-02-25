@@ -25,10 +25,8 @@ body {
   overflow-x: hidden;
 }
 
-/* Vuetify 兼容性：确保 Vuetify 组件不显示默认光标（前台） */
-.v-btn, .v-card, .v-list-item, .v-navigation-drawer, .v-app-bar, .v-tab, .v-chip {
-  cursor: none !important;
-}
+/* Vuetify 兼容性：后台管理界面使用默认光标 */
+/* 前台自定义光标效果已禁用 */
 
 /* 自定义光标 */
 .cursor {

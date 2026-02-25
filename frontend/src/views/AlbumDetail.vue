@@ -1,36 +1,97 @@
 <template>
   <div class="album-detail-page">
     <!-- 密码验证对话框 -->
-    <div v-if="showPasswordDialog" class="password-dialog-overlay" @click="closePasswordDialog">
-      <div class="password-dialog" @click.stop>
-        <h3 class="dialog-title">🔒 相册需要密码访问</h3>
-        <p class="dialog-subtitle">{{ albumStore.currentAlbum?.name }}</p>
-        <form @submit.prevent="handleVerifyPassword" class="password-form">
-          <div class="form-group">
-            <label for="password">请输入访问密码</label>
-            <input
-              id="password"
+    <v-dialog
+      v-model="showPasswordDialog"
+      persistent
+      max-width="500"
+      transition="dialog-bottom-transition"
+    >
+      <v-card class="password-card">
+        <!-- 装饰背景 -->
+        <div class="card-decoration">
+          <div class="decoration-circle"></div>
+          <div class="decoration-circle"></div>
+        </div>
+
+        <!-- 图标 -->
+        <div class="lock-icon-wrapper">
+          <v-icon size="80" color="primary" class="lock-icon">mdi-lock-outline</v-icon>
+        </div>
+
+        <!-- 标题区域 -->
+        <v-card-title class="text-center pa-0 mb-2">
+          <h2 class="dialog-title">私密相册</h2>
+          <p class="dialog-subtitle">{{ albumStore.currentAlbum?.name }}</p>
+        </v-card-title>
+
+        <!-- 表单区域 -->
+        <v-card-text class="pa-0">
+          <v-form @submit.prevent="handleVerifyPassword" class="password-form">
+            <v-text-field
               v-model="passwordInput"
-              type="password"
-              placeholder="输入密码"
-              required
+              :type="showPassword ? 'text' : 'password'"
+              label="访问密码"
+              placeholder="请输入相册访问密码"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-key-outline"
+              :append-inner-icon="showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+              @click:append-inner="showPassword = !showPassword"
+              :error-messages="passwordError ? [passwordError] : []"
+              :disabled="verifying"
               autofocus
-            />
-          </div>
-          <div v-if="passwordError" class="error-message">
-            {{ passwordError }}
-          </div>
-          <div class="dialog-actions">
-            <button type="button" class="btn-secondary" @click="closePasswordDialog">
-              取消
-            </button>
-            <button type="submit" class="btn-primary" :disabled="verifying">
-              {{ verifying ? '验证中...' : '确认' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              hide-details="auto"
+              class="password-input"
+            ></v-text-field>
+
+            <v-expand-transition>
+              <v-alert
+                v-if="passwordError"
+                type="error"
+                variant="tonal"
+                density="compact"
+                class="mt-3"
+                closable
+                @click:close="passwordError = ''"
+              >
+                {{ passwordError }}
+              </v-alert>
+            </v-expand-transition>
+          </v-form>
+        </v-card-text>
+
+        <!-- 操作按钮 -->
+        <v-card-actions class="pa-0 mt-6">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="outlined"
+            color="grey"
+            @click="closePasswordDialog"
+            :disabled="verifying"
+            class="mr-2"
+          >
+            返回
+          </v-btn>
+          <v-btn
+            variant="flat"
+            color="primary"
+            @click="handleVerifyPassword"
+            :loading="verifying"
+            :disabled="!passwordInput"
+            class="submit-btn"
+          >
+            验证访问
+          </v-btn>
+        </v-card-actions>
+
+        <!-- 提示文字 -->
+        <p class="hint-text">
+          <v-icon size="small" color="grey">mdi-information-outline</v-icon>
+          此相册受密码保护，请联系摄影师获取访问权限
+        </p>
+      </v-card>
+    </v-dialog>
 
     <section class="album-section">
       <div v-if="albumStore.loading" class="loading">
@@ -105,6 +166,7 @@ const showPasswordDialog = ref(false)
 const passwordInput = ref('')
 const passwordError = ref('')
 const verifying = ref(false)
+const showPassword = ref(false)
 
 onMounted(async () => {
   const albumId = route.params.id
@@ -211,127 +273,133 @@ const handleVerifyPassword = async () => {
   padding-top: 100px;
 }
 
-/* 密码对话框 */
-.password-dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
+/* 密码对话框样式 */
+.password-card {
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.98) 0%, rgba(10, 10, 10, 0.98) 100%) !important;
+  border: 1px solid rgba(201, 169, 98, 0.2);
+  padding: 3rem 2.5rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.password-dialog {
-  background: var(--bg-secondary);
-  padding: var(--spacing-xl);
-  border-radius: 8px;
-  max-width: 400px;
-  width: 90%;
+/* 装饰背景 */
+.card-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.dialog-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem;
-  font-weight: 300;
-  margin-bottom: var(--spacing-sm);
+.decoration-circle {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 169, 98, 0.08) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+.decoration-circle:first-child {
+  top: -150px;
+  left: -100px;
+}
+
+.decoration-circle:last-child {
+  top: -100px;
+  right: -100px;
+}
+
+/* 锁图标 */
+.lock-icon-wrapper {
   text-align: center;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lock-icon {
+  opacity: 0.9;
+  filter: drop-shadow(0 4px 12px rgba(201, 169, 98, 0.3));
+}
+
+/* 标题样式 */
+.dialog-title {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 2.5rem !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.15em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
 }
 
 .dialog-subtitle {
-  text-align: center;
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-lg);
-}
-
-.password-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.form-group label {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.1em;
-}
-
-.form-group input {
-  background: var(--bg-primary);
-  border: 1px solid rgba(201, 169, 98, 0.3);
-  color: var(--text-primary);
-  padding: 0.75rem;
-  border-radius: 4px;
   font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: var(--accent-gold);
-}
-
-.error-message {
-  color: #ff6b6b;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.dialog-actions {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: flex-end;
-  margin-top: var(--spacing-md);
-}
-
-.btn-primary {
-  background: var(--accent-gold);
-  color: var(--bg-primary);
-  border: none;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-warm);
-  transform: translateY(-2px);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--text-secondary);
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-}
-
-.btn-secondary:hover {
-  border-color: var(--accent-gold);
   color: var(--accent-gold);
+  opacity: 0.8;
+  letter-spacing: 0.1em;
+  margin: 0;
 }
 
-.album-section {
+/* 表单样式 */
+.password-form {
+  position: relative;
+  z-index: 1;
+}
+
+.password-input :deep(.v-field) {
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  transition: all 0.3s ease;
+}
+
+.password-input :deep(.v-field:hover) {
+  border-color: rgba(201, 169, 98, 0.5);
+}
+
+.password-input :deep(.v-field--focused) {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(201, 169, 98, 0.1);
+}
+
+.password-input :deep(.v-label) {
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.password-input :deep(input) {
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+}
+
+.password-input :deep(input::placeholder) {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+/* 按钮样式 */
+.submit-btn {
+  min-width: 120px;
+  letter-spacing: 0.1em;
+}
+
+/* 提示文字 */
+.hint-text {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  opacity: 0.7;
+}
+
+/* 相册区域样式 */.album-section {
   padding: var(--spacing-xl) var(--spacing-lg);
   min-height: 100vh;
 }

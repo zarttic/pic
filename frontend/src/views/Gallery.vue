@@ -38,15 +38,20 @@
       >
         <v-card hover @click="openViewer(photo)">
           <v-img
-            v-lazyload="{
-              src: getImageUrl(photo.thumbnail_path || photo.file_path),
-              placeholder: '/placeholder.jpg'
-            }"
+            :src="getImageUrl(photo.thumbnail_path || photo.file_path)"
             :alt="photo.title"
             height="250"
             cover
             class="cursor-pointer"
           >
+            <template v-slot:placeholder>
+              <div class="d-flex align-center justify-center fill-height">
+                <v-progress-circular
+                  color="grey-lighten-4"
+                  indeterminate
+                ></v-progress-circular>
+              </div>
+            </template>
             <!-- 悬停覆盖层 -->
             <v-overlay
               absolute
@@ -75,18 +80,33 @@
       fullscreen
       :scrim="false"
       transition="dialog-bottom-transition"
+      @keydown.esc="closeViewer"
     >
-      <v-card v-if="selectedPhoto" color="black">
+      <v-card v-if="selectedPhoto" color="black" @click="closeViewer">
         <!-- 顶部工具栏 -->
-        <v-toolbar dark color="transparent" flat absolute top width="100%">
+        <v-toolbar
+          dark
+          color="transparent"
+          flat
+          absolute
+          top
+          width="100%"
+          style="z-index: 10;"
+          @click.stop
+        >
           <v-spacer></v-spacer>
-          <v-btn icon dark @click="closeViewer">
+          <v-btn
+            icon
+            dark
+            @click.stop="closeViewer"
+            style="background: rgba(0,0,0,0.5);"
+          >
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-toolbar>
 
         <!-- 图片内容 -->
-        <v-card-text class="pa-0 fill-height d-flex align-center justify-center">
+        <v-card-text class="pa-0 fill-height d-flex align-center justify-center" @click.stop>
           <v-img
             :src="getImageUrl(selectedPhoto.file_path)"
             :alt="selectedPhoto.title"
@@ -102,7 +122,7 @@
         </v-card-text>
 
         <!-- 底部信息 -->
-        <v-card-actions class="pa-4" style="background: rgba(0,0,0,0.7);">
+        <v-card-actions class="pa-4" style="background: rgba(0,0,0,0.7);" @click.stop>
           <div>
             <h3 class="text-h6 text-white">{{ selectedPhoto.title }}</h3>
             <p class="text-caption text-grey-lighten-1 mb-0">

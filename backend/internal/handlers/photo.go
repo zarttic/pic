@@ -189,8 +189,8 @@ func (h *PhotoHandler) Create(c *gin.Context) {
 	photo := models.Photo{
 		Title:         title,
 		Description:   description,
-		FilePath:      "/" + uploadPath,
-		ThumbnailPath: "/" + thumbnailPath,
+		FilePath:      "/" + strings.TrimPrefix(uploadPath, "./"),
+		ThumbnailPath: "/" + strings.TrimPrefix(thumbnailPath, "./"),
 		Location:      location,
 		ShotDate:      shotDateValue,
 		Year:          year,

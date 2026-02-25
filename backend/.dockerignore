@@ -1,0 +1,53 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output
+*.out
+test-server.exe
+
+# Go workspace
+go.work
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db-journal
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Test
+*.test.go
+coverage.txt
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log

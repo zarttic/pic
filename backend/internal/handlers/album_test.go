@@ -392,8 +392,8 @@ func TestAlbumHandler_AddPhotoToAlbum(t *testing.T) {
 
 	t.Run("add photo to album", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"photo_id":    photo.ID,
-			"sort_order":  1,
+			"photo_id":   photo.ID,
+			"sort_order": 1,
 		}
 		body, _ := json.Marshal(reqBody)
 

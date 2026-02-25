@@ -13,7 +13,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		ServerPort: getEnv("SERVER_PORT", "8080"),
+		ServerPort: getEnv("SERVER_PORT", "9421"),
 		DBPath:     getEnv("DB_PATH", "./picsite.db"),
 		UploadPath: getEnv("UPLOAD_PATH", "./uploads"),
 		JWTSecret:  getEnv("JWT_SECRET", "your-secret-key-change-in-production"),

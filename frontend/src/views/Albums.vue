@@ -28,7 +28,7 @@
           <div class="album-cover">
             <img
               v-if="album.cover_photo_id && getCoverPhoto(album)"
-              :src="getCoverPhoto(album).thumbnail_path || getCoverPhoto(album).file_path"
+              :src="getCoverPhoto(album)"
               :alt="album.name"
             />
             <div v-else class="album-cover-placeholder">
@@ -52,6 +52,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAlbumStore } from '../stores/albums'
+import { getImageUrl } from '../utils/index'
 
 const router = useRouter()
 const albumStore = useAlbumStore()
@@ -66,7 +67,14 @@ const viewAlbum = (id) => {
 }
 
 const getCoverPhoto = (album) => {
-  return album.photos?.find(p => p.id === album.cover_photo_id)
+  if (!album.photos || !Array.isArray(album.photos)) {
+    return null
+  }
+  const photo = album.photos.find(p => p.id === album.cover_photo_id)
+  if (!photo) {
+    return null
+  }
+  return getImageUrl(photo.thumbnail_path || photo.file_path || '')
 }
 
 const observeElements = () => {

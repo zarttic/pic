@@ -70,7 +70,7 @@
             class="photo-item"
             @click="openViewer(photo)"
           >
-            <img :src="photo.thumbnail_path || photo.file_path" :alt="photo.title" />
+            <img :src="getImageUrl(photo.thumbnail_path || photo.file_path)" :alt="photo.title" />
             <div class="photo-overlay">
               <h3 class="photo-title">{{ photo.title }}</h3>
               <p class="photo-meta">{{ photo.location }} · {{ photo.year }}</p>
@@ -84,7 +84,7 @@
     <div v-if="selectedPhoto" class="viewer active" @click="closeViewer">
       <button class="viewer-close" @click="closeViewer">×</button>
       <div class="viewer-content" @click.stop>
-        <img :src="selectedPhoto.file_path" :alt="selectedPhoto.title" />
+        <img :src="getImageUrl(selectedPhoto.file_path)" :alt="selectedPhoto.title" />
       </div>
     </div>
   </div>
@@ -94,6 +94,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAlbumStore } from '../stores/albums'
+import { getImageUrl } from '../utils/index'
 
 const route = useRoute()
 const router = useRouter()

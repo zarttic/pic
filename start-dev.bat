@@ -11,7 +11,7 @@ start cmd /k "cd frontend && npm run dev"
 
 echo.
 echo Servers are starting...
-echo Backend: http://localhost:8080
+echo Backend: http://localhost:9421
 echo Frontend: http://localhost:5173
 echo.
 pause

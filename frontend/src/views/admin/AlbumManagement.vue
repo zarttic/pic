@@ -30,7 +30,7 @@
             <td>
               <div class="album-cover">
                 <img
-                  v-if="album.cover_photo_id"
+                  v-if="album.cover_photo_id && getCoverPhoto(album)"
                   :src="getCoverPhoto(album)"
                   :alt="album.name"
                 />
@@ -152,6 +152,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAlbumStore } from '../../stores/albums'
+import { getImageUrl } from '../../utils/index'
 
 const albumStore = useAlbumStore()
 const showCreateDialog = ref(false)
@@ -182,8 +183,15 @@ onMounted(() => {
 })
 
 const getCoverPhoto = (album) => {
-  const photo = album.photos?.find(p => p.id === album.cover_photo_id)
-  return photo?.thumbnail_path || photo?.file_path || ''
+  if (!album.photos || !Array.isArray(album.photos)) {
+    return null
+  }
+  const photo = album.photos.find(p => p.id === album.cover_photo_id)
+  if (!photo) {
+    return null
+  }
+  // 返回缩略图或原图路径（转换为完整URL）
+  return getImageUrl(photo.thumbnail_path || photo.file_path || '')
 }
 
 const handleCreate = async () => {

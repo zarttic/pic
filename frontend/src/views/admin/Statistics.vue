@@ -47,7 +47,7 @@
         <div v-else class="photo-list">
           <div v-for="(photo, index) in topPhotos" :key="photo.id" class="photo-item">
             <div class="rank">{{ index + 1 }}</div>
-            <img :src="photo.thumbnail_path || photo.file_path" :alt="photo.title" class="photo-thumb" />
+            <img :src="getImageUrl(photo.thumbnail_path || photo.file_path)" :alt="photo.title" class="photo-thumb" />
             <div class="photo-info">
               <div class="photo-title">{{ photo.title }}</div>
               <div class="photo-location">{{ photo.location || '未知地点' }}</div>
@@ -67,7 +67,7 @@
         </div>
         <div v-else class="photo-list">
           <div v-for="photo in recentPhotos" :key="photo.id" class="photo-item">
-            <img :src="photo.thumbnail_path || photo.file_path" :alt="photo.title" class="photo-thumb" />
+            <img :src="getImageUrl(photo.thumbnail_path || photo.file_path)" :alt="photo.title" class="photo-thumb" />
             <div class="photo-info">
               <div class="photo-title">{{ photo.title }}</div>
               <div class="photo-date">{{ formatDate(photo.created_at) }}</div>
@@ -83,6 +83,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { usePhotoStore } from '../../stores/photos'
 import { useAlbumStore } from '../../stores/albums'
+import { getImageUrl } from '../../utils/index'
 
 const photoStore = usePhotoStore()
 const albumStore = useAlbumStore()

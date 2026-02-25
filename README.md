@@ -66,7 +66,7 @@ go mod tidy
 go run cmd/server/main.go
 ```
 
-API 服务运行在 http://localhost:8080
+API 服务运行在 http://localhost:9421
 
 ## API 文档
 
@@ -163,12 +163,12 @@ API 服务运行在 http://localhost:8080
 
 ### 前端 (.env)
 ```
-VITE_API_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:9421/api
 ```
 
 ### 后端 (.env)
 ```
-SERVER_PORT=8080
+SERVER_PORT=9421
 DB_PATH=./photography.db
 UPLOAD_PATH=./uploads
 JWT_SECRET=your-secret-key-change-in-production

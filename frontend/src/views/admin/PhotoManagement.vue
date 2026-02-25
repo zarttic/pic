@@ -6,115 +6,114 @@
 
     <!-- 上传表单 -->
     <div class="upload-section">
-        <h3 class="subsection-title">上传新照片</h3>
-        <form @submit.prevent="handleUpload" class="upload-form">
-          <div class="form-group">
-            <label for="title">标题</label>
-            <input
-              id="title"
-              v-model="uploadForm.title"
-              type="text"
-              required
-              placeholder="照片标题"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="location">拍摄地点</label>
-            <input
-              id="location"
-              v-model="uploadForm.location"
-              type="text"
-              placeholder="拍摄地点"
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="year">年份</label>
-              <input
-                id="year"
-                v-model="uploadForm.year"
-                type="number"
-                placeholder="2024"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="camera">相机</label>
-              <input
-                id="camera"
-                v-model="uploadForm.camera_model"
-                type="text"
-                placeholder="相机型号"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="description">描述</label>
-            <textarea
-              id="description"
-              v-model="uploadForm.description"
-              rows="3"
-              placeholder="照片描述"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="file">选择照片</label>
-            <input
-              id="file"
-              type="file"
-              accept="image/*"
-              @change="handleFileSelect"
-              required
-            />
-          </div>
-
-          <button type="submit" class="btn-primary" :disabled="uploading">
-            {{ uploading ? '上传中...' : '上传照片' }}
-          </button>
-        </form>
-      </div>
-
-      <!-- 照片列表 -->
-      <div class="photos-list">
-        <h3 class="subsection-title">已上传照片</h3>
-        <div v-if="photoStore.loading" class="loading">加载中...</div>
-        <div v-else-if="photoStore.photos.length === 0" class="empty">
-          暂无照片
+      <h3 class="subsection-title">上传新照片</h3>
+      <form @submit.prevent="handleUpload" class="upload-form">
+        <div class="form-group">
+          <label for="title">标题</label>
+          <input
+            id="title"
+            v-model="uploadForm.title"
+            type="text"
+            required
+            placeholder="照片标题"
+          />
         </div>
-        <div v-else class="photos-grid">
-          <div
-            v-for="photo in photoStore.photos"
-            :key="photo.id"
-            class="photo-item"
+
+        <div class="form-group">
+          <label for="location">拍摄地点</label>
+          <input
+            id="location"
+            v-model="uploadForm.location"
+            type="text"
+            placeholder="拍摄地点"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="year">年份</label>
+            <input
+              id="year"
+              v-model="uploadForm.year"
+              type="number"
+              placeholder="2024"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="camera">相机</label>
+            <input
+              id="camera"
+              v-model="uploadForm.camera_model"
+              type="text"
+              placeholder="相机型号"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">描述</label>
+          <textarea
+            id="description"
+            v-model="uploadForm.description"
+            rows="3"
+            placeholder="照片描述"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="file">选择照片</label>
+          <input
+            id="file"
+            type="file"
+            accept="image/*"
+            @change="handleFileSelect"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn-primary" :disabled="uploading">
+          {{ uploading ? '上传中...' : '上传照片' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- 照片列表 -->
+    <div class="photos-list">
+      <h3 class="subsection-title">已上传照片</h3>
+      <div v-if="photoStore.loading" class="loading">加载中...</div>
+      <div v-else-if="photoStore.photos.length === 0" class="empty">
+        暂无照片
+      </div>
+      <div v-else class="photos-grid">
+        <div
+          v-for="photo in photoStore.photos"
+          :key="photo.id"
+          class="photo-item"
+        >
+          <img :src="getImageUrl(photo.file_path)" :alt="photo.title" />
+          <div class="photo-info">
+            <h4>{{ photo.title }}</h4>
+            <p>{{ photo.location }}</p>
+            <p v-if="photo.view_count > 0" class="view-count">
+              {{ photo.view_count }} 次浏览
+            </p>
+          </div>
+          <button
+            class="btn-delete"
+            @click="handleDelete(photo.id)"
           >
-            <img :src="photo.file_path" :alt="photo.title" />
-            <div class="photo-info">
-              <h4>{{ photo.title }}</h4>
-              <p>{{ photo.location }}</p>
-              <p v-if="photo.view_count > 0" class="view-count">
-                {{ photo.view_count }} 次浏览
-              </p>
-            </div>
-            <button
-              class="btn-delete"
-              @click="handleDelete(photo.id)"
-            >
-              删除
-            </button>
-            <button
-              class="btn-edit"
-              @click="openEditDialog(photo)"
-            >
-              编辑
-            </button>
-          </div>
+            删除
+          </button>
+          <button
+            class="btn-edit"
+            @click="openEditDialog(photo)"
+          >
+            编辑
+          </button>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- 编辑对话框 -->
     <div v-if="editDialogVisible" class="dialog-overlay" @click="closeEditDialog">
@@ -192,7 +191,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { usePhotoStore } from '../stores/photos'
+import { usePhotoStore } from '../../stores/photos'
+import { getImageUrl } from '../../utils/index'
 
 const photoStore = usePhotoStore()
 const uploading = ref(false)

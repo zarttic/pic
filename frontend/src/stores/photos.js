@@ -102,6 +102,61 @@ export const usePhotoStore = defineStore('photos', () => {
     }
   }
 
+  async function batchDelete(ids) {
+    loading.value = true
+    error.value = null
+    try {
+      await api.delete('/photos/batch', { data: { ids } })
+      photos.value = photos.value.filter(p => !ids.includes(p.id))
+    } catch (err) {
+      error.value = err.message
+      console.error('Error batch deleting photos:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function batchUpdateTags(ids, tags) {
+    loading.value = true
+    error.value = null
+    try {
+      await api.patch('/photos/batch/tags', { ids, tags })
+      photos.value = photos.value.map(p => {
+        if (ids.includes(p.id)) {
+          return { ...p, tags }
+        }
+        return p
+      })
+    } catch (err) {
+      error.value = err.message
+      console.error('Error batch updating tags:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function batchSetFeatured(ids, is_featured) {
+    loading.value = true
+    error.value = null
+    try {
+      await api.patch('/photos/batch/featured', { ids, is_featured })
+      photos.value = photos.value.map(p => {
+        if (ids.includes(p.id)) {
+          return { ...p, is_featured }
+        }
+        return p
+      })
+    } catch (err) {
+      error.value = err.message
+      console.error('Error batch setting featured:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     photos,
     currentPhoto,
@@ -112,6 +167,9 @@ export const usePhotoStore = defineStore('photos', () => {
     uploadPhoto,
     updatePhoto,
     deletePhoto,
-    incrementViewCount
+    incrementViewCount,
+    batchDelete,
+    batchUpdateTags,
+    batchSetFeatured
   }
 })

@@ -6,13 +6,11 @@
         <div class="section-divider"></div>
       </div>
 
-      <div v-if="photoStore.loading" class="loading">
-        加载中...
-      </div>
+      <PhotoGridSkeleton v-if="photoStore.loading" :count="12" />
 
-      <div v-else-if="photoStore.error" class="error">
-        {{ photoStore.error }}
-      </div>
+      <ErrorBoundary v-else-if="photoStore.error">
+        <div class="error">{{ photoStore.error }}</div>
+      </ErrorBoundary>
 
       <div v-else class="gallery-grid">
         <div
@@ -21,7 +19,13 @@
           class="gallery-item"
           @click="openViewer(photo)"
         >
-          <img :src="getImageUrl(photo.thumbnail_path || photo.file_path)" :alt="photo.title" />
+          <img
+            v-lazyload="{
+              src: getImageUrl(photo.thumbnail_path || photo.file_path),
+              placeholder: '/placeholder.jpg'
+            }"
+            :alt="photo.title"
+          />
           <div class="gallery-overlay">
             <h3 class="photo-title">{{ photo.title }}</h3>
             <p class="photo-meta">{{ photo.location }} · {{ photo.year }}</p>
@@ -46,13 +50,21 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { usePhotoStore } from '../stores/photos'
+import { useNotificationStore } from '../stores/notification'
 import { getImageUrl } from '../utils/index'
+import PhotoGridSkeleton from '../components/PhotoGridSkeleton.vue'
+import ErrorBoundary from '../components/ErrorBoundary.vue'
 
 const photoStore = usePhotoStore()
+const notification = useNotificationStore()
 const selectedPhoto = ref(null)
 
 onMounted(() => {
-  photoStore.fetchPhotos()
+  photoStore.fetchPhotos().then(() => {
+    if (!photoStore.error) {
+      notification.success('照片加载成功')
+    }
+  })
   // 触发滚动动画
   observeElements()
 })

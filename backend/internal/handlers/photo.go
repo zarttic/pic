@@ -9,6 +9,7 @@ import (
 	"picsite/internal/models"
 	"picsite/internal/services"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,15 @@ func (h *PhotoHandler) GetAll(c *gin.Context) {
 
 	query := services.GetDB().Model(&models.Photo{})
 
+	// 搜索功能 - 支持多字段搜索
+	if search := c.Query("search"); search != "" {
+		searchTerm := "%" + search + "%"
+		query = query.Where(
+			"title LIKE ? OR description LIKE ? OR location LIKE ? OR tags LIKE ?",
+			searchTerm, searchTerm, searchTerm, searchTerm,
+		)
+	}
+
 	// 筛选
 	if featured := c.Query("featured"); featured != "" {
 		query = query.Where("is_featured = ?", featured == "true")
@@ -32,6 +42,18 @@ func (h *PhotoHandler) GetAll(c *gin.Context) {
 
 	if tag := c.Query("tag"); tag != "" {
 		query = query.Where("tags LIKE ?", "%"+tag+"%")
+	}
+
+	if location := c.Query("location"); location != "" {
+		query = query.Where("location LIKE ?", "%"+location+"%")
+	}
+
+	if year := c.Query("year"); year != "" {
+		query = query.Where("year = ?", year)
+	}
+
+	if camera := c.Query("camera"); camera != "" {
+		query = query.Where("camera_model LIKE ?", "%"+camera+"%")
 	}
 
 	// 排序
@@ -78,6 +100,7 @@ func (h *PhotoHandler) Create(c *gin.Context) {
 	title := c.PostForm("title")
 	description := c.PostForm("description")
 	location := c.PostForm("location")
+	shotDate := c.PostForm("shot_date")
 	year, _ := strconv.Atoi(c.PostForm("year"))
 	cameraModel := c.PostForm("camera_model")
 	lens := c.PostForm("lens")
@@ -89,6 +112,26 @@ func (h *PhotoHandler) Create(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
+		return
+	}
+
+	// 验证文件类型
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+	}
+	if !allowedExts[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的文件类型，仅支持 jpg, jpeg, png, webp"})
+		return
+	}
+
+	// 验证文件大小 (10MB)
+	maxSize := int64(10 * 1024 * 1024)
+	if file.Size > maxSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文件大小超过限制 (最大 10MB)"})
 		return
 	}
 
@@ -108,11 +151,38 @@ func (h *PhotoHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// 提取 EXIF 信息
+	exifData := services.ExtractEXIFFromUpload(uploadPath)
+
 	// 生成缩略图
 	thumbnailPath, err := services.GenerateThumbnailFromUpload(uploadPath)
 	if err != nil {
 		fmt.Printf("Failed to generate thumbnail: %v\n", err)
 		// 不阻止上传，继续保存记录
+	}
+
+	// 使用 EXIF 数据填充表单数据（如果表单中没有提供）
+	if cameraModel == "" && exifData.CameraModel != "" {
+		cameraModel = exifData.CameraModel
+	}
+	if lens == "" && exifData.Lens != "" {
+		lens = exifData.Lens
+	}
+	if aperture == "" && exifData.Aperture != "" {
+		aperture = exifData.Aperture
+	}
+	if shutterSpeed == "" && exifData.ShutterSpeed != "" {
+		shutterSpeed = exifData.ShutterSpeed
+	}
+	if iso == 0 && exifData.ISO != 0 {
+		iso = exifData.ISO
+	}
+	var shotDateValue *time.Time
+	if shotDate == "" && exifData.ShotDate != nil {
+		shotDateValue = exifData.ShotDate
+		if year == 0 {
+			year = exifData.ShotDate.Year()
+		}
 	}
 
 	// 创建照片记录
@@ -122,6 +192,7 @@ func (h *PhotoHandler) Create(c *gin.Context) {
 		FilePath:      "/" + uploadPath,
 		ThumbnailPath: "/" + thumbnailPath,
 		Location:      location,
+		ShotDate:      shotDateValue,
 		Year:          year,
 		CameraModel:   cameraModel,
 		Lens:          lens,
@@ -186,6 +257,107 @@ func (h *PhotoHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Photo deleted successfully"})
 }
 
+// BatchDelete 批量删除照片
+func (h *PhotoHandler) BatchDelete(c *gin.Context) {
+	var request struct {
+		IDs []uint `json:"ids" binding:"required,min=1,max=100"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误，最多支持100张照片"})
+		return
+	}
+
+	// 查询要删除的照片
+	var photos []models.Photo
+	if err := services.GetDB().Where("id IN ?", request.IDs).Find(&photos).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "查询照片失败"})
+		return
+	}
+
+	// 删除文件
+	for _, photo := range photos {
+		if photo.FilePath != "" {
+			filePath := "." + photo.FilePath
+			if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+				fmt.Printf("Failed to delete file: %v\n", err)
+			}
+		}
+		if photo.ThumbnailPath != "" {
+			thumbnailPath := "." + photo.ThumbnailPath
+			if err := os.Remove(thumbnailPath); err != nil && !os.IsNotExist(err) {
+				fmt.Printf("Failed to delete thumbnail: %v\n", err)
+			}
+		}
+	}
+
+	// 批量删除数据库记录
+	if err := services.GetDB().Where("id IN ?", request.IDs).Delete(&models.Photo{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "批量删除成功",
+		"deleted": len(photos),
+	})
+}
+
+// BatchUpdateTags 批量更新标签
+func (h *PhotoHandler) BatchUpdateTags(c *gin.Context) {
+	var request struct {
+		IDs  []uint `json:"ids" binding:"required,min=1,max=100"`
+		Tags string `json:"tags" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
+		return
+	}
+
+	// 批量更新
+	if err := services.GetDB().Model(&models.Photo{}).Where("id IN ?", request.IDs).
+		Update("tags", request.Tags).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "批量更新标签成功",
+		"updated": len(request.IDs),
+	})
+}
+
+// BatchUpdateFeatured 批量设置精选
+func (h *PhotoHandler) BatchUpdateFeatured(c *gin.Context) {
+	var request struct {
+		IDs       []uint `json:"ids" binding:"required,min=1,max=100"`
+		IsFeatured bool   `json:"is_featured"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
+		return
+	}
+
+	// 批量更新
+	if err := services.GetDB().Model(&models.Photo{}).Where("id IN ?", request.IDs).
+		Update("is_featured", request.IsFeatured).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
+		return
+	}
+
+	action := "取消精选"
+	if request.IsFeatured {
+		action = "设置精选"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "批量" + action + "成功",
+		"updated": len(request.IDs),
+	})
+}
+
 func (h *PhotoHandler) IncrementView(c *gin.Context) {
 	id := c.Param("id")
 
@@ -203,6 +375,26 @@ func (h *PhotoHandler) UploadFile(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
+		return
+	}
+
+	// 验证文件类型
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+	}
+	if !allowedExts[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的文件类型，仅支持 jpg, jpeg, png, webp"})
+		return
+	}
+
+	// 验证文件大小 (10MB)
+	maxSize := int64(10 * 1024 * 1024)
+	if file.Size > maxSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文件大小超过限制 (最大 10MB)"})
 		return
 	}
 

@@ -48,10 +48,12 @@ type AlbumPhoto struct {
 }
 
 type User struct {
-	ID        uint      `json:"id" gorm:"primaryKey"`
-	Username  string    `json:"username" gorm:"unique;not null"`
-	Password  string    `json:"-" gorm:"not null"`
-	Email     string    `json:"email" gorm:"unique"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uint       `json:"id" gorm:"primaryKey"`
+	Username     string     `json:"username" gorm:"unique;not null"`
+	Password     string     `json:"-" gorm:"not null"`
+	Email        string     `json:"email" gorm:"unique"`
+	Role         string     `json:"role" gorm:"default:admin"` // admin, editor, viewer
+	LastLoginAt  *time.Time `json:"last_login_at"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }

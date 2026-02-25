@@ -1,8 +1,9 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -25,9 +26,13 @@ var SessionManagerInstance = &AlbumSessionManager{
 	sessions: make(map[string]*AlbumAccessSession),
 }
 
-// GenerateSessionToken 生成会话token (简化版)
-func GenerateSessionToken(albumID uint, password string) string {
-	return strconv.Itoa(int(albumID)) + "_" + password + "_" + time.Now().Format("20060102")
+// GenerateSessionToken 生成安全的随机会话token
+func GenerateSessionToken(albumID uint) (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
 
 // SetSession 设置会话

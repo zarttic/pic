@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"strconv"
 
 	"picsite/internal/middleware"
 	"picsite/internal/models"
 	"picsite/internal/services"
+	"picsite/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -200,14 +199,17 @@ func (h *AlbumHandler) VerifyPassword(c *gin.Context) {
 	}
 
 	// 验证密码
-	hashedPassword := hashPassword(request.Password)
-	if album.Password != hashedPassword {
+	if !utils.CheckPassword(request.Password, album.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "密码错误"})
 		return
 	}
 
 	// 生成会话 token
-	token := middleware.GenerateSessionToken(album.ID, request.Password)
+	token, err := middleware.GenerateSessionToken(album.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成会话令牌失败"})
+		return
+	}
 	middleware.SessionManagerInstance.SetSession(token, album.ID)
 
 	// 设置 cookie
@@ -237,7 +239,11 @@ func (h *AlbumHandler) SetPassword(c *gin.Context) {
 		return
 	}
 
-	hashedPassword := hashPassword(request.Password)
+	hashedPassword, err := utils.HashPassword(request.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		return
+	}
 	album.Password = hashedPassword
 	album.IsProtected = true
 
@@ -268,11 +274,6 @@ func (h *AlbumHandler) RemovePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "密码已移除"})
-}
-
-func hashPassword(password string) string {
-	hash := sha256.Sum256([]byte(password))
-	return hex.EncodeToString(hash[:])
 }
 
 func parseUint(s string) uint {

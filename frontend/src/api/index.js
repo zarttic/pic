@@ -25,12 +25,49 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
+    const originalRequest = error.config
+
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          localStorage.removeItem('token')
-          window.location.href = '/admin'
+          // 如果是刷新令牌失败，直接清除认证信息
+          if (originalRequest.url === '/auth/refresh') {
+            localStorage.removeItem('token')
+            localStorage.removeItem('refreshToken')
+            window.location.href = '/admin/login'
+            break
+          }
+
+          // 尝试刷新令牌
+          const refreshToken = localStorage.getItem('refreshToken')
+          if (refreshToken && !originalRequest._retry) {
+            originalRequest._retry = true
+
+            try {
+              const response = await api.post('/auth/refresh', {
+                refresh_token: refreshToken
+              })
+
+              const { token } = response.data
+              localStorage.setItem('token', token)
+
+              // 重试原请求
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              return api(originalRequest)
+            } catch (refreshError) {
+              // 刷新失败，跳转登录页
+              localStorage.removeItem('token')
+              localStorage.removeItem('refreshToken')
+              window.location.href = '/admin/login'
+              break
+            }
+          } else {
+            // 没有刷新令牌或已重试过，跳转登录页
+            localStorage.removeItem('token')
+            localStorage.removeItem('refreshToken')
+            window.location.href = '/admin/login'
+          }
           break
         case 404:
           console.error('Resource not found')

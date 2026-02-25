@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import Navigation from './components/Navigation.vue'
+import ToastContainer from './components/ToastContainer.vue'
 </script>
 
 <template>
@@ -9,6 +10,7 @@ import Navigation from './components/Navigation.vue'
     <div class="cursor-glow"></div>
     <Navigation />
     <router-view />
+    <ToastContainer />
   </div>
 </template>
 

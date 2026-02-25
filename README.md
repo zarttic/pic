@@ -1,212 +1,349 @@
-# 摄影作品集网站
+# PicSite - 摄影作品展示网站
 
-一个基于 Vue 3 + Go 的全栈摄影作品展示与管理平台。
+[![Test](https://github.com/zarttic/pic/workflows/Test/badge.svg)](https://github.com/zarttic/pic/actions/workflows/test.yml)
+[![Deploy](https://github.com/zarttic/pic/workflows/Deploy/badge.svg)](https://github.com/zarttic/pic/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 项目结构
+一个现代化、功能完善的摄影作品展示网站，基于 Vue 3 + Go 构建，支持照片管理、相册管理、加密相册、访问统计等功能。
 
-```
-.
-├── frontend/          # Vue 3 前端项目
-│   ├── src/
-│   │   ├── components/    # 组件
-│   │   ├── views/         # 页面
-│   │   ├── router/        # 路由
-│   │   ├── stores/        # Pinia 状态管理
-│   │   ├── api/           # API 接口
-│   │   └── styles/        # 样式
-│   └── package.json
-│
-├── backend/           # Go 后端项目
-│   ├── cmd/server/        # 入口文件
-│   ├── internal/
-│   │   ├── models/        # 数据模型
-│   │   ├── handlers/      # HTTP 处理器
-│   │   ├── middleware/    # 中间件
-│   │   ├── services/      # 业务逻辑
-│   │   └── config/        # 配置
-│   ├── uploads/           # 上传文件存储
-│   └── go.mod
-│
-├── photography-website-backup.html  # 原始单文件版本
-└── README.md
-```
+![PicSite Screenshot](docs/screenshot.png)
 
-## 技术栈
+## ✨ 特性
 
-### 前端
-- Vue 3 + Composition API
-- Vite
-- Vue Router
-- Pinia
-- Axios
+### 核心功能
+- 📸 **照片管理** - 上传、编辑、删除、批量操作
+- 📁 **相册管理** - 创建、编辑、加密相册
+- 🔐 **加密相册** - 密码保护的私密相册
+- 📊 **访问统计** - 照片浏览次数统计
+- 🔍 **智能搜索** - 多字段搜索和筛选
+- 🎯 **EXIF 提取** - 自动提取相机参数
 
-### 后端
-- Go 1.21+
-- Gin (Web 框架)
-- GORM (ORM)
-- SQLite (数据库)
+### 安全特性
+- 🔒 **JWT 认证** - 安全的管理员认证系统
+- 🛡️ **bcrypt 加密** - 密码使用 bcrypt 哈希
+- ✅ **文件验证** - 类型和大小的严格验证
+- 🎫 **随机 Token** - 加密安全的会话管理
 
-## 快速开始
+### 用户体验
+- ⚡ **懒加载** - 图片按需加载，提升性能
+- 🎨 **骨架屏** - 优雅的加载状态
+- 🔔 **Toast 通知** - 实时的操作反馈
+- 📱 **响应式设计** - 完美适配移动端
+- 🎭 **错误边界** - 友好的错误处理
 
-### 前端开发
+### 技术栈
+
+#### 后端
+- **框架**: Go 1.24 + Gin
+- **ORM**: GORM
+- **数据库**: SQLite（可迁移至 PostgreSQL）
+- **认证**: JWT (HS256)
+- **加密**: bcrypt
+
+#### 前端
+- **框架**: Vue 3 + Vite
+- **状态管理**: Pinia
+- **路由**: Vue Router
+- **样式**: CSS Variables
+- **字体**: Cormorant Garamond + Outfit
+
+## 🚀 快速开始
+
+### 方式一：Docker 部署（推荐）
+
+**前置要求：**
+- Docker 20.10+
+- Docker Compose 2.0+
+
+**部署步骤：**
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# 1. 克隆仓库
+git clone https://github.com/zarttic/pic.git
+cd pic
+
+# 2. 配置环境变量
+cp backend/.env.example backend/.env
+# 编辑 backend/.env，设置 JWT_SECRET
+
+# 3. 启动服务
+docker-compose up -d
+
+# 4. 初始化管理员
+docker-compose exec backend ./init-admin
+
+# 5. 访问应用
+# 前端: http://localhost
+# 后端: http://localhost:9421
+# 管理后台: http://localhost/admin
 ```
 
-访问 http://localhost:5173
+### 方式二：本地开发
 
-### 后端开发
+**后端：**
 
 ```bash
 cd backend
-go mod tidy
+
+# 安装依赖
+go mod download
+
+# 配置环境
+cp .env.example .env
+# 编辑 .env，设置 JWT_SECRET
+
+# 初始化管理员
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=your-password
+go run cmd/init-admin/main.go
+
+# 启动服务
 go run cmd/server/main.go
 ```
 
-API 服务运行在 http://localhost:9421
+**前端：**
 
-## API 文档
+```bash
+cd frontend
 
-### 照片管理
+# 安装依赖
+npm install
 
+# 配置环境
+cp .env.example .env
+# 编辑 .env，设置 API 地址
+
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+```
+
+## 📖 文档
+
+- [后端开发文档](./backend/README.md)
+- [迭代报告](./ITERATION_REPORT.md)
+- [测试指南](./TESTING_GUIDE.md)
+- [Phase 3 总结](./PHASE3_SUMMARY.md)
+
+## 🗂️ 项目结构
+
+```
+.
+├── backend/                 # Go 后端
+│   ├── cmd/                # 命令行工具
+│   │   ├── server/        # 主程序
+│   │   └── init-admin/    # 管理员初始化
+│   ├── internal/
+│   │   ├── config/        # 配置管理
+│   │   ├── handlers/      # HTTP 处理器
+│   │   ├── middleware/    # 中间件
+│   │   ├── models/        # 数据模型
+│   │   ├── services/      # 业务逻辑
+│   │   └── utils/         # 工具函数
+│   ├── Dockerfile
+│   └── README.md
+│
+├── frontend/               # Vue 前端
+│   ├── src/
+│   │   ├── components/    # 组件
+│   │   ├── views/         # 页面
+│   │   ├── stores/        # 状态管理
+│   │   ├── router/        # 路由配置
+│   │   ├── api/           # API 客户端
+│   │   └── directives/    # 自定义指令
+│   ├── Dockerfile
+│   └── nginx.conf
+│
+├── .github/
+│   └── workflows/         # CI/CD 配置
+│       ├── test.yml
+│       └── deploy.yml
+│
+├── docker-compose.yml     # Docker 编排
+└── README.md             # 本文件
+```
+
+## 🔧 配置
+
+### 后端环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `SERVER_PORT` | 9421 | 服务器端口 |
+| `DB_PATH` | ./picsite.db | 数据库路径 |
+| `UPLOAD_PATH` | ./uploads | 上传目录 |
+| `JWT_SECRET` | *必填* | JWT 密钥 |
+
+### 前端环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `VITE_API_URL` | http://localhost:9421/api | API 地址 |
+
+## 📚 API 文档
+
+### 公开接口
+
+#### 照片
 - `GET /api/photos` - 获取照片列表
-  - 查询参数: `page`, `page_size`, `featured`, `tag`
-
-- `GET /api/photos/:id` - 获取单张照片详情
-
-- `POST /api/photos` - 上传新照片
-  - Content-Type: `multipart/form-data`
-  - 字段: `file`, `title`, `description`, `location`, `year`, `camera_model`, `lens`, `aperture`, `shutter_speed`, `iso`
-
-- `PUT /api/photos/:id` - 更新照片信息
-  - Content-Type: `application/json`
-
-- `DELETE /api/photos/:id` - 删除照片
-
+- `GET /api/photos/:id` - 获取单张照片
 - `POST /api/photos/:id/view` - 增加浏览次数
 
-### 相册管理
-
+#### 相册
 - `GET /api/albums` - 获取相册列表
-
-- `GET /api/albums/:id` - 获取单个相册详情
-  - 如果相册有密码保护，未验证时只返回基本信息
-
-- `POST /api/albums` - 创建新相册
-  - Content-Type: `application/json`
-
-- `PUT /api/albums/:id` - 更新相册信息
-
-- `DELETE /api/albums/:id` - 删除相册
-
-- `POST /api/albums/:id/photos` - 添加照片到相册
-  - Body: `{"photo_id": 1, "sort_order": 0}`
-
-- `DELETE /api/albums/:id/photos/:photo_id` - 从相册移除照片
-
+- `GET /api/albums/:id` - 获取相册详情
 - `POST /api/albums/:id/verify` - 验证相册密码
-  - Body: `{"password": "your_password"}`
-  - 返回: 访问令牌（24小时有效）
 
-- `POST /api/albums/:id/password` - 设置相册密码
-  - Body: `{"password": "your_password"}`
+### 认证接口
+- `POST /api/auth/login` - 登录
+- `POST /api/auth/logout` - 登出
+- `POST /api/auth/refresh` - 刷新令牌
+- `GET /api/me` - 获取当前用户
 
-- `DELETE /api/albums/:id/password` - 移除相册密码
+### 管理接口（需认证）
 
-### 文件上传
+#### 照片管理
+- `POST /api/photos` - 创建照片
+- `PUT /api/photos/:id` - 更新照片
+- `DELETE /api/photos/:id` - 删除照片
+- `DELETE /api/photos/batch` - 批量删除
+- `PATCH /api/photos/batch/tags` - 批量更新标签
+- `PATCH /api/photos/batch/featured` - 批量设置精选
 
-- `POST /api/upload` - 上传图片文件
-  - Content-Type: `multipart/form-data`
-  - 字段: `file`
+#### 相册管理
+- `POST /api/albums` - 创建相册
+- `PUT /api/albums/:id` - 更新相册
+- `DELETE /api/albums/:id` - 删除相册
+- `POST /api/albums/:id/photos` - 添加照片到相册
+- `DELETE /api/albums/:id/photos/:photo_id` - 移除照片
+- `POST /api/albums/:id/password` - 设置密码
 
-## 开发进度
+完整 API 文档请查看 [API.md](./docs/API.md)
 
-### v0.1.0 - 项目初始化 ✅
-- [x] 初始化 Vue 3 + Vite 前端项目
-- [x] 初始化 Go 后端项目
-- [x] 配置项目结构
-- [x] 实现基础路由
-- [x] 配置 CORS
-- [x] 实现数据库连接
+## 🧪 测试
 
-### v0.2.0 - 照片管理功能 ✅
-- [x] 照片数据模型
-- [x] 照片 CRUD API
-- [x] 文件上传功能
-- [x] 前端 Gallery 页面
-- [x] 前端 Admin 管理页面
-- [x] 图片缩略图生成
-- [x] 照片编辑功能优化
+### 后端测试
 
-### v0.3.0 - 相册功能 ✅
-- [x] 相册数据模型
-- [x] 相册管理 API
-- [x] 前端相册页面
-- [x] 照片分类和标签
-
-### v0.4.0 - 后台管理与认证（计划中）
-- [ ] 用户认证系统
-- [ ] JWT 中间件
-- [ ] 权限控制
-- [ ] 统计数据
-
-### v1.0.0 - 部署上线（计划中）
-- [ ] 生产环境配置
-- [ ] PostgreSQL 数据库迁移
-- [ ] 性能优化
-- [ ] 部署文档
-
-## 环境变量
-
-### 前端 (.env)
-```
-VITE_API_URL=http://localhost:9421/api
+```bash
+cd backend
+go test ./... -v
 ```
 
-### 后端 (.env)
-```
-SERVER_PORT=9421
-DB_PATH=./photography.db
-UPLOAD_PATH=./uploads
-JWT_SECRET=your-secret-key-change-in-production
-```
+### 前端测试
 
-## 测试功能
-
-1. 启动后端服务
-2. 启动前端开发服务器
-3. 访问前端首页
-4. 导航到"管理"页面上传照片
-5. 导航到"作品"页面查看照片
-
-## 注意事项
-
-- 首次运行后端时会自动创建 SQLite 数据库
-- 上传的照片保存在 `backend/uploads/` 目录
-- 开发环境使用 SQLite，生产环境建议切换到 PostgreSQL
-- 生产环境需要更改 JWT_SECRET
-
-## Git 工作流
-
-当前使用简单的 master 分支进行迭代开发：
-
-```
-master
-  └── v0.1.0 (项目初始化)
-  └── v0.2.0 (照片管理)
-  └── ...
+```bash
+cd frontend
+npm run test
 ```
 
-提交规范：
-- `feat:` 新功能
-- `fix:` 修复 bug
-- `refactor:` 重构代码
-- `docs:` 文档更新
-- `style:` 代码格式调整
+## 🚢 部署
 
-## License
+### 生产环境部署建议
 
-MIT
+1. **使用 HTTPS**
+   - 配置 SSL 证书
+   - 强制 HTTPS 重定向
+
+2. **数据库优化**
+   - 迁移到 PostgreSQL
+   - 定期备份
+
+3. **文件存储**
+   - 使用对象存储（AWS S3、阿里云 OSS）
+   - 配置 CDN 加速
+
+4. **性能优化**
+   - 启用 Gzip 压缩
+   - 配置浏览器缓存
+   - 使用 Redis 缓存会话
+
+5. **安全加固**
+   - 设置防火墙规则
+   - 定期更新依赖
+   - 启用日志审计
+
+### Docker 生产部署
+
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  backend:
+    image: your-registry/picsite-backend:latest
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_PATH=/app/data/picsite.db
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    restart: always
+
+  frontend:
+    image: your-registry/picsite-frontend:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    restart: always
+```
+
+## 🤝 贡献
+
+欢迎贡献！请查看 [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 📝 版本历史
+
+### v0.5.0 (当前)
+- ✅ Phase 3: 用户体验优化
+- 骨架屏加载
+- 图片懒加载
+- Toast 通知
+- 错误边界
+- 移动端响应式
+
+### v0.4.0
+- ✅ Phase 1: 安全加固与认证系统
+- ✅ Phase 2: 功能完善
+- JWT 认证
+- 批量操作
+- EXIF 提取
+- 搜索功能
+
+### v0.3.0
+- 相册功能
+- 加密相册
+- 访问统计
+
+查看 [CHANGELOG.md](./CHANGELOG.md) 获取完整历史
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 🙏 致谢
+
+- [Vue.js](https://vuejs.org/)
+- [Gin](https://gin-gonic.com/)
+- [GORM](https://gorm.io/)
+- 所有贡献者
+
+## 📮 联系方式
+
+项目地址: [https://github.com/zarttic/pic](https://github.com/zarttic/pic)
+
+问题反馈: [Issues](https://github.com/zarttic/pic/issues)
+
+---
+
+**⭐ 如果这个项目对你有帮助，请给一个 Star！**

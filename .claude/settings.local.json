@@ -27,7 +27,15 @@
       "Bash(gh run:*)",
       "Bash(gh auth:*)",
       "Bash(test:*)",
-      "Bash(echo 测试命令执行完成:*)"
+      "Bash(echo 测试命令执行完成:*)",
+      "Bash(npm run:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(npm install:*)",
+      "Bash(go run:*)",
+      "Bash(netstat:*)",
+      "Bash(pkill:*)",
+      "Bash(ls:*)"
     ]
   }
 }

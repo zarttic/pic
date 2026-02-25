@@ -122,11 +122,11 @@ npm run build
 
 ## 📖 文档
 
+- **[BUG_FIXES.md](./BUG_FIXES.md)** - Bug 修复记录（汇总所有问题修复）
+- **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - 项目迭代总结
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - 测试指南
+- **[CHANGELOG.md](./CHANGELOG.md)** - 版本更新日志
 - [后端开发文档](./backend/README.md)
-- [迭代报告](./ITERATION_REPORT.md)
-- [测试指南](./TESTING_GUIDE.md)
-- [Phase 3 总结](./PHASE3_SUMMARY.md)
-- [Phase 4 总结](./PHASE4_SUMMARY.md)
 
 ## 🗂️ 项目结构
 
